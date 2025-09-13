@@ -1,0 +1,32 @@
+@tailwind base;
+
+@plugin "tailwindcss-animate";
+@import "tailwindcss";
+@custom-variant dark (&:is(.dark *));
+@tailwind components;
+
+/* Toast Styles */
+.toast-message {
+  @apply shadow-lg;
+  animation: slideIn 0.3s ease-out;
+}
+
+.toast-message[data-sonner-toast][data-styled="true"] {
+  @apply bg-black text-white border border-gray-800;
+}
+
+.toast-message[data-sonner-toast][data-styled="true"] [data-close-button] {
+  @apply text-gray-400 hover:text-white;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
