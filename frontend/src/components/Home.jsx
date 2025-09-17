@@ -1,12 +1,17 @@
-import React from 'react'
-import Navbar from './Navbar'
+import Navbar from "../shared/Navbar";
+import React from "react";
+import HeroSection from "./HeroSection";
+import Footer from "@/shared/Footer";
+
 
 const Home = () => {
   return (
     <>
-      <Navbar/>
+      <Navbar />
+      <HeroSection />
+      <Footer/>
     </>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;
