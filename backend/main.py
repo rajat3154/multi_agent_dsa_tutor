@@ -1,22 +1,17 @@
-from fastapi import FastAPI, HTTPException, Depends
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
+from fastapi import FastAPI
+from sqlalchemy import  text
 from fastapi.middleware.cors import CORSMiddleware
+from schema.schemas import SignupRequest,LoginRequest
 from dotenv import load_dotenv
-import os 
+from controllers.auth import signup,login
+from config import engine,SessionLocal
 load_dotenv()
-
-DATABASE_URL=os.getenv("DATABASE_URL")
-
-engine=create_engine(DATABASE_URL,pool_pre_ping=True)
-
-SessionLocal=sessionmaker(autocommit=False,autoflush=False,bind=engine)
 
 app=FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173","https://multi-agent-dsa-tutor.vercel.app/"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -38,4 +33,15 @@ def startup_event():
             print("Database connected successfully!")
     except Exception as e:
         print("Database connection failed:", e)
+
+
+@app.post("/signup")
+def signsup(user:SignupRequest):
+    return signup(user)
+
+@app.post("/login")
+def logsin(user:LoginRequest):
+    return login(user)
+
+ 
 

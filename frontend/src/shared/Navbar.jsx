@@ -1,5 +1,4 @@
-// src/components/Navbar.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import theme from "@/components/theme";
 import {
   BookOpen,
@@ -12,9 +11,8 @@ import {
   LogOut,
   Menu,
   X,
-  Badge,
+  Users,
 } from "lucide-react";
-
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -33,50 +31,40 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import AIMentor from "@/components/AIMentor";
+import { toast } from "sonner";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-  };
+  // Check localStorage on mount to persist login state
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) setIsLoggedIn(true);
+  }, []);
 
   const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user_name");
     setIsLoggedIn(false);
+    navigate("/");
+    toast.success("Logged out Successfully");
   };
 
   const menuItems = [
-    {
-      title: "Concept Mastery",
-      icon: <BookOpen />,
-      href: "#",
-    },
-    {
-      title: "CodeQuest",
-      icon: <Code2 />,
-      href: "#",
-    },
-    {
-      title: "Quiz Challenge",
-      icon: <Brain />,
-      href: "#",
-    },
-    {
-      title: "Progress Hub",
-      icon: <BarChart3 />,
-      href: "#",
-    },
+    { title: "Concept Mastery", icon: <BookOpen />, href: "/topic" },
+    { title: "CodeQuest", icon: <Code2 />, href: "#" },
+    { title: "Quiz Challenge", icon: <Brain />, href: "#" },
+    { title: "Progress Hub", icon: <BarChart3 />, href: "#" },
+    { title: "AI Mentor", icon: <MessageCircle />, href: "#" },
   ];
 
   return (
     <>
       <nav
         className="sticky top-0 z-50 border-b"
-        style={{
-          backgroundColor: theme.colors.background,
-        }}
+        style={{ backgroundColor: theme.colors.background }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -97,7 +85,7 @@ const Navbar = () => {
               </span>
             </div>
 
-            {/* Desktop Navigation - Simple Links */}
+            {/* Desktop Navigation */}
             <div className="hidden md:block">
               <NavigationMenu>
                 <NavigationMenuList className="space-x-1">
@@ -106,9 +94,7 @@ const Navbar = () => {
                       <NavigationMenuLink
                         href={item.href}
                         className="px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center hover:bg-gray-800"
-                        style={{
-                          color: theme.colors.text,
-                        }}
+                        style={{ color: theme.colors.text }}
                       >
                         {React.cloneElement(item.icon, {
                           className: "h-5 w-5",
@@ -122,7 +108,7 @@ const Navbar = () => {
               </NavigationMenu>
             </div>
 
-            {/* Right side: Auth */}
+            {/* Right side Auth */}
             <div className="flex items-center">
               {isLoggedIn ? (
                 <DropdownMenu>
@@ -142,7 +128,7 @@ const Navbar = () => {
                             color: theme.colors.text,
                           }}
                         >
-                          JS
+                          {localStorage.getItem("user_name")?.charAt(0) || "U"}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
@@ -159,13 +145,13 @@ const Navbar = () => {
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">
-                          John Smith
+                          {localStorage.getItem("user_name") || "User"}
                         </p>
                         <p
                           className="text-xs"
                           style={{ color: "var(--code-comment)" }}
                         >
-                          john.smith@example.com
+                          {localStorage.getItem("user_email") || ""}
                         </p>
                       </div>
                     </DropdownMenuLabel>
