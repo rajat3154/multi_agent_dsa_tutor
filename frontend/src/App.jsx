@@ -6,6 +6,7 @@ import Signup from "./auth/Signup";
 import Login from "./auth/Login";
 import { Toaster } from "sonner";
 import TopicUnderstanding from "./components/TopicUnderstanding";
+import Profile from "./components/Profile";
 
 const appRouter = createBrowserRouter([
   {
@@ -23,6 +24,10 @@ const appRouter = createBrowserRouter([
   {
     path: "/topic",
     element: <TopicUnderstanding />,
+  },
+  {
+    path: "/profile",
+    element: <Profile />,
   },
 ]);
 

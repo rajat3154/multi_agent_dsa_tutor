@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from schema.schemas import SignupRequest,LoginRequest,ExplainationResponse,ExplainationRequest
 from dotenv import load_dotenv
 from controllers.auth import signup,login,get_current_user
+from controllers.profile_details import get_profile,get_my_concepts
 from controllers.generative import generate_explaination
 from config import engine,SessionLocal
 load_dotenv()
@@ -48,9 +49,12 @@ def logsin(user:LoginRequest):
 def explains_concept(request: ExplainationRequest,current_user=Depends(get_current_user)):
     return generate_explaination(request,current_user)
 
- 
+
+@app.get("/api/profile")
+def getprofile(user=Depends(get_current_user)):
+    return get_profile(user)
 
 
-
-
-
+@app.get("/api/my-concepts")
+def get_user_concepts(user=Depends(get_current_user)):
+    return get_my_concepts(user)
