@@ -72,22 +72,47 @@ const API_URL = import.meta.env.VITE_BACKEND_URL;
     e.preventDefault();
     setError("");
     setSuccess("");
+
     if (password !== confirmPassword) {
       toast.error("Password do not match");
       return;
     }
+
     setIsLoading(true);
-    try{
-      const response=await axios.post(`${API_URL}/signup`,{
+    try {
+      let profilePhotoUrl = "";
+      if (profilePhoto) {
+        const formData = new FormData();
+        formData.append("file", fileInputRef.current.files[0]);
+        formData.append(
+          "upload_preset",
+          import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+        );
+
+        const cloudResponse = await axios.post(
+          `https://api.cloudinary.com/v1_1/${
+            import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+          }/image/upload`,
+          formData
+        );
+        profilePhotoUrl = cloudResponse.data.secure_url; 
+      }
+      const response = await axios.post(`${API_URL}/signup`, {
         name,
         email,
         password,
-        profilePhoto:profilePhoto,
-        leeel:"beginner",
-        problems:[],
-        quizzes:[],
-        profile:{},
-      })
+        profilePhoto: profilePhotoUrl,
+        level: "beginner",
+        profile: {
+          problems_solved: [],
+          quizzes_solved: [],
+          saved_problems: [],
+          saved_quizzes: [],
+          learned_concepts: [],
+          saved_documentation: [],
+        },
+      });
+
       toast.success(response.data.message);
       setName("");
       setEmail("");
@@ -96,12 +121,13 @@ const API_URL = import.meta.env.VITE_BACKEND_URL;
       setProfilePhoto(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
       navigate("/login");
-    }catch(err){
-      toast.error(err.response?.data?.detail||"Signup failed. Try again.");
-    }finally{
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Signup failed. Try again.");
+    } finally {
       setIsLoading(false);
     }
   };
+
 
   return (
     <>

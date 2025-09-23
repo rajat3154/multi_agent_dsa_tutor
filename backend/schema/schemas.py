@@ -19,3 +19,22 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 #-------------------Login----------------------------#
+#-------------------Query----------------------------#
+class Query(BaseModel):
+    query: str
+#-------------------Query----------------------------#
+#-------------------Explaination Request----------------------------#
+class ExplainationRequest(BaseModel):
+     concept:str
+     language:str="python"
+     difficulty:str="beginner"
+#-------------------Explaination Request----------------------------#
+#-------------------Explaination Response----------------------------#
+class ExplainationResponse(BaseModel):
+     title:str
+     content:str
+     markdown_content:Optional[str]=None
+#-------------------Explaination Response----------------------------#
+
+
+

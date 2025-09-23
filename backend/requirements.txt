@@ -7,3 +7,5 @@ passlib[bcrypt]
 pydantic
 PyJWT
 dotenv
+cloudinary
+groq

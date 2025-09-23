@@ -5,6 +5,7 @@ import AIMentor from "./components/AIMentor";
 import Signup from "./auth/Signup";
 import Login from "./auth/Login";
 import { Toaster } from "sonner";
+import TopicUnderstanding from "./components/TopicUnderstanding";
 
 const appRouter = createBrowserRouter([
   {
@@ -19,7 +20,10 @@ const appRouter = createBrowserRouter([
     path: "/login",
     element: <Login />,
   },
-  
+  {
+    path: "/topic",
+    element: <TopicUnderstanding />,
+  },
 ]);
 
 function App() {

@@ -19,7 +19,8 @@ import {
 import Navbar from "@/shared/Navbar";
 import { useNavigate } from "react-router-dom";
 import { toast, Toaster } from "sonner";
-
+import { useContext } from "react";
+import { UserContext } from "@/contexts/UserContext";
 const Login = () => {
   // Apply theme on mount
   useEffect(() => {
@@ -32,6 +33,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeAgent, setActiveAgent] = useState(0);
+  const { setUser } = useContext(UserContext);
   const navigate = useNavigate();
 const API_URL = import.meta.env.VITE_BACKEND_URL;
   const agents = [
@@ -73,16 +75,23 @@ const API_URL = import.meta.env.VITE_BACKEND_URL;
         password,
       });
       toast.success(response.data.message);
-      localStorage.setItem("token",response.data.token);
+      localStorage.setItem("token", response.data.token);
       localStorage.setItem("user_name", response.data.user_name);
       localStorage.setItem("user_email", response.data.email);
+      localStorage.setItem("user_photo", response.data.profilephoto || "");
+      setUser({
+        name: response.data.user_name,
+        email: response.data.email,
+        photo: response.data.profilephoto || "",
+        isLoggedIn: true,
+      });
       setEmail("");
       setPassword("");
       setRememberMe(false);
       
         navigate("/");
       
-    }catch{
+    }catch(err){
 toast.error(err.response?.data?.detail || "Login failed. Try again.");
     }finally{
 setIsLoading(false);

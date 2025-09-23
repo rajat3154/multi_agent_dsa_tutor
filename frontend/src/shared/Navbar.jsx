@@ -32,13 +32,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import AIMentor from "@/components/AIMentor";
 import { toast } from "sonner";
-
+import { useContext } from "react";
+import { UserContext } from "@/contexts/UserContext"; 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user, setUser } = useContext(UserContext);
   const navigate = useNavigate();
-
-  // Check localStorage on mount to persist login state
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) setIsLoggedIn(true);
@@ -54,7 +54,7 @@ const Navbar = () => {
 
   const menuItems = [
     { title: "Concept Mastery", icon: <BookOpen />, href: "/topic" },
-    { title: "CodeQuest", icon: <Code2 />, href: "#" },
+    { title: "CodeQuest", icon: <Code2 />, href: "/topic" },
     { title: "Quiz Challenge", icon: <Brain />, href: "#" },
     { title: "Progress Hub", icon: <BarChart3 />, href: "#" },
     { title: "AI Mentor", icon: <MessageCircle />, href: "#" },
@@ -115,26 +115,22 @@ const Navbar = () => {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="relative h-10 w-10 rounded-full ml-2"
+                      className="relative h-10 w-10 rounded-full ml-2 cursor-pointer"
                     >
                       <Avatar
-                        className="h-10 w-10"
+                        className="h-10 w-10 cursor-pointer"
                         style={{ border: `2px solid ${theme.colors.primary}` }}
                       >
-                        <AvatarImage src="/avatars/user.jpg" alt="User" />
-                        <AvatarFallback
-                          style={{
-                            backgroundColor: theme.colors.primary,
-                            color: theme.colors.text,
-                          }}
-                        >
-                          {localStorage.getItem("user_name")?.charAt(0) || "U"}
-                        </AvatarFallback>
+                        <Avatar>
+                          <AvatarImage src={user.photo} alt="User" />
+                          <AvatarFallback>U</AvatarFallback>
+                        </Avatar>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
+
                   <DropdownMenuContent
-                    className="w-56 border-0 shadow-lg"
+                    className="w-56 border-0 shadow-lg "
                     style={{
                       backgroundColor: theme.colors.background,
                       color: theme.colors.text,
@@ -142,29 +138,47 @@ const Navbar = () => {
                     align="end"
                     forceMount
                   >
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">
-                          {localStorage.getItem("user_name") || "User"}
-                        </p>
-                        <p
-                          className="text-xs"
-                          style={{ color: "var(--code-comment)" }}
+                    <DropdownMenuLabel className="font-normal cursor-pointer">
+                      <div className="flex items-center space-x-3">
+                        {/* Avatar Image */}
+                        <Avatar
+                          className="h-10 w-10"
+                          style={{
+                            border: `2px solid ${theme.colors.primary}`,
+                          }}
                         >
-                          {localStorage.getItem("user_email") || ""}
-                        </p>
+                          <AvatarImage
+                            src={user.photo}
+                            alt={user.name || "User"}
+                          />
+                        </Avatar>
+
+                        {/* Name and Email */}
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none">
+                            {user.name || "User"}
+                          </p>
+                          <p
+                            className="text-xs"
+                            style={{ color: "var(--code-comment)" }}
+                          >
+                            {user.email || ""}
+                          </p>
+                        </div>
                       </div>
                     </DropdownMenuLabel>
+
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      <User className="mr-2 h-4 w-4" /> Profile
+                    <DropdownMenuItem className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4 cursor-pointer" /> Profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Settings className="mr-2 h-4 w-4" /> Settings
-                    </DropdownMenuItem>
+
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout}>
-                      <LogOut className="mr-2 h-4 w-4" /> Log out
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      className="cursor-pointer"
+                    >
+                      <LogOut className="mr-2 h-4 w-4 cursor-pointer" /> Log out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

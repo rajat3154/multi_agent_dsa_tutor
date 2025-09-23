@@ -1,9 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI,HTTPException,Depends
 from sqlalchemy import  text
 from fastapi.middleware.cors import CORSMiddleware
-from schema.schemas import SignupRequest,LoginRequest
+from schema.schemas import SignupRequest,LoginRequest,ExplainationResponse,ExplainationRequest
 from dotenv import load_dotenv
-from controllers.auth import signup,login
+from controllers.auth import signup,login,get_current_user
+from controllers.generative import generate_explaination
 from config import engine,SessionLocal
 load_dotenv()
 
@@ -43,5 +44,13 @@ def signsup(user:SignupRequest):
 def logsin(user:LoginRequest):
     return login(user)
 
+@app.post("/api/generate-explaination",response_model=ExplainationResponse)
+def explains_concept(request: ExplainationRequest,current_user=Depends(get_current_user)):
+    return generate_explaination(request,current_user)
+
  
+
+
+
+
 
