@@ -81,7 +81,7 @@ const Navbar = () => {
                 style={{ color: theme.colors.text }}
                 onClick={() => navigate("/")}
               >
-                DSA Tutor
+                CodeGen.ai
               </span>
             </div>
 
