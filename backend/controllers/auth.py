@@ -49,28 +49,45 @@ def signup(user:SignupRequest):
     except Exception as e:
         raise HTTPException(status_code=400,detail=str(e))
     
-def login(user:LoginRequest):
-    try :
+def login(user: LoginRequest):
+    try:
         with engine.begin() as conn:
-            validate_user=conn.execute(
-                text("SELECT id,name,email,password,profilephoto FROM users WHERE email=:email"),{"email":user.email}
+            validate_user = conn.execute(
+                text("SELECT id, name, email, password, profilephoto FROM users WHERE email = :email"),
+                {"email": user.email}
             ).fetchone()
-            validate_password=pwd_context.verify(user.password,validate_user.password)
-            if not validate_user or not validate_password:
-                raise HTTPException(400,"Invalid email or password")
-            token=jwt.encode(
+
+            if not validate_user:
+                raise HTTPException(status_code=400, detail="Email not found")
+
+            # ✅ bcrypt passwords must be <=72 bytes
+            validate_password = pwd_context.verify(user.password[:72], validate_user.password)
+            if not validate_password:
+                raise HTTPException(status_code=400, detail="Invalid password")
+
+            token = jwt.encode(
                 {
-                    "user_id":str(validate_user.id),
-                    "email":validate_user.email,
-                    "exp":datetime.datetime.utcnow()+datetime.timedelta(hours=24)
-                },JWT_SECRET,algorithm=JWT_ALGORITHM
+                    "user_id": str(validate_user.id),
+                    "email": validate_user.email,
+                    "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+                },
+                JWT_SECRET,
+                algorithm=JWT_ALGORITHM
             )
-        return {"message":f"Welcome back {validate_user.name}","token": token,
+
+        return {
+            "message": f"Welcome back {validate_user.name}",
+            "token": token,
             "user_name": validate_user.name,
             "email": validate_user.email,
-            "profilephoto": validate_user.profilephoto}
+            "profilephoto": validate_user.profilephoto
+        }
+
     except Exception as e:
-        raise HTTPException(status_code=400,detail=str(e))    
+
+        print(f"Login error: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
 
      
 def get_current_user(authorization:str=Header(...)):
