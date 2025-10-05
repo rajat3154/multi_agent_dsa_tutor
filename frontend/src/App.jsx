@@ -7,6 +7,7 @@ import Login from "./auth/Login";
 import { Toaster } from "sonner";
 import TopicUnderstanding from "./components/TopicUnderstanding";
 import Profile from "./components/Profile";
+import CodingPracticePage from "./components/CodingPracticePage";
 
 const appRouter = createBrowserRouter([
   {
@@ -28,6 +29,10 @@ const appRouter = createBrowserRouter([
   {
     path: "/profile",
     element: <Profile />,
+  },
+  {
+    path: "/practice",
+    element: <CodingPracticePage />,
   },
 ]);
 

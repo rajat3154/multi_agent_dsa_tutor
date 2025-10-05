@@ -54,7 +54,7 @@ const Navbar = () => {
 
   const menuItems = [
     { title: "Concept Mastery", icon: <BookOpen />, href: "/topic" },
-    { title: "CodeQuest", icon: <Code2 />, href: "/topic" },
+    { title: "CodeQuest", icon: <Code2 />, href: "/practice" },
     { title: "Quiz Challenge", icon: <Brain />, href: "#" },
     { title: "Progress Hub", icon: <BarChart3 />, href: "#" },
     { title: "AI Mentor", icon: <MessageCircle />, href: "#" },

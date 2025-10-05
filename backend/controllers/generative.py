@@ -5,6 +5,8 @@ from sqlalchemy import text
 from agents.teacher_agent import teacher_agent
 import uuid,json,logging
 from config import engine
+from schema.schemas import ProblemRequest
+from agents.examiner_agent import examiner_agent
 
 def generate_explaination(request:ExplainationRequest,current_user):
     """
@@ -44,3 +46,13 @@ def generate_explaination(request:ExplainationRequest,current_user):
     except Exception as e:
         logging.error(f"Error generating explainations : {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error generating explanation: {str(e)}")
+    
+def generate_problems(request:ProblemRequest,current_user):
+    """
+    Generate 10 problems using examiner agent
+    """
+    try:
+        problems=examiner_agent(request.data_structure,request.topic)
+        return {"problems":[p.dict() for p in problems]}
+    except Exception as e:
+        raise HTTPException(status_code=500,detail=f"Error generating problems : {str(e)}")
