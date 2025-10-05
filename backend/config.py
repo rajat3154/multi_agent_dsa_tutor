@@ -13,7 +13,7 @@ GROQ_KEY = os.getenv("GROQ_API_KEY")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 client = Groq(api_key=GROQ_KEY) if GROQ_KEY else None
 engine=create_engine(DATABASE_URL,pool_pre_ping=True)
-
 pwd_context=CryptContext(schemes=["bcrypt"],deprecated="auto")
+
 
 SessionLocal=sessionmaker(autocommit=False,autoflush=False,bind=engine)
