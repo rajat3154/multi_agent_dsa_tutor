@@ -7,7 +7,8 @@ problems_db={}
 def examiner_agent(data_structure:str,topic:str)->List[Problem]:
       """AI agent that generates coding problems based on the data structure and topic"""
       prompt=f"""
-      Generate 10 highly detailed coding coding platforms for {data_structure} focusing on {topic}.
+      Generate 10 highly detailed coding problems on
+ for {data_structure} focusing on {topic}.
       Return only a valid JSON array.Don not include any explainations,notes,or text outside the JSON.
 
       Each problem must include:
@@ -71,4 +72,4 @@ def examiner_agent(data_structure:str,topic:str)->List[Problem]:
             return problems
 
       except Exception as e:
-            raise HTTPException(f"Examiner agent error :{str(e)}")
+            raise HTTPException(status_code=500, detail=f"Examiner agent error: {str(e)}")
