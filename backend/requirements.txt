@@ -3,7 +3,8 @@ uvicorn
 sqlalchemy 
 psycopg2-binary 
 python-multipart 
-passlib[bcrypt] 
+passlib
+bcrypt==4.0.1
 pydantic
 PyJWT
 dotenv
