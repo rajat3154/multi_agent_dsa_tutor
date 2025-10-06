@@ -18,7 +18,7 @@ def checker_agent(problem:Problem,user_code:str,language:str)->dict:
       {json.dumps([ex.dict() for ex in problem.examples],indent=2)}
 
       CONSTRAINTS:
-      {json.dumps(problem.constarints,indent=2)}
+      {json.dumps(problem.constraints,indent=2)}
 
       USER'S CODE({language}):
       {user_code}
