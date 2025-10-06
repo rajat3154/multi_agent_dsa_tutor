@@ -189,7 +189,11 @@ const CodingPracticePage = () => {
   // Submit code for evaluation using the FastAPI endpoint
   const submitCode = async () => {
     if (!selectedProblem) return;
-
+const token = getAuthToken();
+if (!token) {
+  setError("Authentication token not found. Please log in again.");
+  return;
+}
     setIsSubmitting(true);
     setIsResultsOpen(true);
     setTestResults(null);
@@ -231,7 +235,11 @@ const CodingPracticePage = () => {
   // Run test cases using the new /api/run-tests endpoint
   const runTests = async () => {
     if (!selectedProblem) return;
-
+const token = getAuthToken();
+if (!token) {
+  setError("Authentication token not found. Please log in again.");
+  return;
+}
     setIsTesting(true);
     setIsResultsOpen(true);
     setTestResults(null);
