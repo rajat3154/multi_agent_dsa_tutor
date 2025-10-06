@@ -26,6 +26,7 @@ import {
   X,
   Star,
   Sparkles,
+  GripVertical,
 } from "lucide-react";
 import Navbar from "@/shared/Navbar";
 import { UserContext } from "@/contexts/UserContext";
@@ -49,6 +50,10 @@ const CodingPracticePage = () => {
   const [error, setError] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Adjustable panel heights
+  const [editorHeight, setEditorHeight] = useState(60); // percentage of available space
+  const [isResizing, setIsResizing] = useState(false);
+
   const API_URL = import.meta.env.VITE_BACKEND_URL;
 
   const languages = [
@@ -64,6 +69,7 @@ const CodingPracticePage = () => {
       setIsMobile(window.innerWidth < 768);
       if (window.innerWidth < 768) {
         setIsSidebarOpen(false);
+        setEditorHeight(50); // Default to 50/50 split on mobile
       }
     };
 
@@ -71,6 +77,42 @@ const CodingPracticePage = () => {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  // Handle resize events
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isResizing) return;
+
+      const container = document.querySelector(".editor-results-container");
+      if (!container) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const newHeight =
+        ((e.clientY - containerRect.top) / containerRect.height) * 100;
+
+      // Limit between 20% and 80%
+      const clampedHeight = Math.max(20, Math.min(80, newHeight));
+      setEditorHeight(clampedHeight);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "row-resize";
+      document.body.style.userSelect = "none";
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [isResizing]);
 
   // Get token from localStorage using UserContext
   const getAuthToken = () => {
@@ -144,7 +186,7 @@ const CodingPracticePage = () => {
     }
   };
 
-  // Submit code for evaluation
+  // Submit code for evaluation using the FastAPI endpoint
   const submitCode = async () => {
     if (!selectedProblem) return;
 
@@ -185,7 +227,7 @@ const CodingPracticePage = () => {
     }
   };
 
-  // Run test cases
+  // Run test cases using the new /api/run-tests endpoint
   const runTests = async () => {
     if (!selectedProblem) return;
 
@@ -233,7 +275,6 @@ const CodingPracticePage = () => {
       setIsSidebarOpen(false);
     }
   };
-
 
   const copyCode = async () => {
     try {
@@ -295,7 +336,7 @@ const CodingPracticePage = () => {
     );
   };
 
-  // Render test case results
+  // Render test case results from FastAPI response
   const renderTestCase = (testCase, index) => {
     return (
       <div
@@ -342,6 +383,50 @@ const CodingPracticePage = () => {
             </span>
           </div>
         </div>
+      </div>
+    );
+  };
+
+  // Render efficiency analysis from FastAPI response
+  const renderEfficiencyAnalysis = (efficiency) => {
+    if (!efficiency) return null;
+
+    return (
+      <div className="mt-4 p-4 bg-gray-800/30 rounded-lg">
+        <h4 className="font-medium mb-3 text-white">Efficiency Analysis</h4>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="text-gray-400">Your Time Complexity:</span>
+            <div className="text-white font-mono">
+              {efficiency.time_complexity}
+            </div>
+          </div>
+          <div>
+            <span className="text-gray-400">Optimal Time Complexity:</span>
+            <div className="text-white font-mono">
+              {efficiency.optimal_time_complexity}
+            </div>
+          </div>
+          <div>
+            <span className="text-gray-400">Your Space Complexity:</span>
+            <div className="text-white font-mono">
+              {efficiency.space_complexity}
+            </div>
+          </div>
+          <div>
+            <span className="text-gray-400">Optimal Space Complexity:</span>
+            <div className="text-white font-mono">
+              {efficiency.optimal_space_complexity}
+            </div>
+          </div>
+        </div>
+        {efficiency.comparison && (
+          <div className="mt-3 p-3 bg-blue-900/20 rounded">
+            <span className="text-blue-300 text-sm">
+              {efficiency.comparison}
+            </span>
+          </div>
+        )}
       </div>
     );
   };
@@ -681,224 +766,258 @@ const CodingPracticePage = () => {
               )}
             </div>
 
-            {/* Code Editor */}
-            <div className="w-full md:w-1/2 flex flex-col">
-              <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="text-sm font-medium hidden sm:block text-white">
-                    {getFileName()}
-                  </div>
-                  <div className="relative ml-0 sm:ml-3">
-                    <button
-                      className="flex items-center text-xs text-gray-400 hover:text-white px-2 py-1 rounded border border-gray-700"
-                      onClick={() =>
-                        setShowLanguageDropdown(!showLanguageDropdown)
-                      }
-                    >
-                      <span className="text-white">
-                        {languages.find((l) => l.id === language)?.name}
-                      </span>
-                      <ChevronsUpDown className="w-3 h-3 ml-1" />
-                    </button>
+            {/* Code Editor and Results Section */}
+            <div className="w-full md:w-1/2 flex flex-col editor-results-container">
+              {/* Code Editor Section */}
+              <div
+                className="flex flex-col border-b border-gray-800"
+                style={{ height: `${editorHeight}%`, minHeight: "30%" }}
+              >
+                <div className="p-4 border-b border-gray-800 flex items-center justify-between flex-shrink-0">
+                  <div className="flex items-center">
+                    <div className="text-sm font-medium hidden sm:block text-white">
+                      {getFileName()}
+                    </div>
+                    <div className="relative ml-0 sm:ml-3">
+                      <button
+                        className="flex items-center text-xs text-gray-400 hover:text-white px-2 py-1 rounded border border-gray-700"
+                        onClick={() =>
+                          setShowLanguageDropdown(!showLanguageDropdown)
+                        }
+                      >
+                        <span className="text-white">
+                          {languages.find((l) => l.id === language)?.name}
+                        </span>
+                        <ChevronsUpDown className="w-3 h-3 ml-1" />
+                      </button>
 
-                    {showLanguageDropdown && (
-                      <div className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded shadow-lg z-10">
-                        {languages.map((lang) => (
-                          <button
-                            key={lang.id}
-                            className={`block w-full text-left px-3 py-2 text-sm hover:bg-gray-700 ${
-                              language === lang.id
-                                ? "text-orange-500"
-                                : "text-white"
-                            }`}
-                            onClick={() => {
-                              setLanguage(lang.id);
-                              setShowLanguageDropdown(false);
-                            }}
-                          >
-                            {lang.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    className="p-1 rounded hover:bg-gray-800"
-                    onClick={copyCode}
-                  >
-                    <Copy className="w-4 h-4 text-white" />
-                  </button>
-                  <button
-                    className="p-1 rounded hover:bg-gray-800"
-                    onClick={downloadCode}
-                  >
-                    <Download className="w-4 h-4 text-white" />
-                  </button>
-                  <button className="p-1 rounded hover:bg-gray-800 hidden sm:block">
-                    <Share2 className="w-4 h-4 text-white" />
-                  </button>
-                </div>
-              </div>
-              <div className="flex-1 overflow-hidden relative">
-                <CodeEditor code={code} setCode={setCode} language={language} />
-              </div>
-              <div className="p-4 border-t border-gray-800 flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center space-x-2">
-                  <button
-                    className="bg-orange-500 hover:bg-orange-600 disabled:bg-orange-400 text-white font-medium py-2 px-3 sm:px-4 rounded transition-colors flex items-center text-sm"
-                    onClick={runTests}
-                    disabled={!selectedProblem || isTesting}
-                  >
-                    {isTesting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white mr-1 sm:mr-2"></div>
-                        <span className="hidden sm:inline">Running...</span>
-                        <span className="sm:hidden">Run</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                        <span className="hidden sm:inline">Run Code</span>
-                        <span className="sm:hidden">Run</span>
-                      </>
-                    )}
-                  </button>
-                  <button
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-green-500 text-white font-medium py-2 px-3 sm:px-4 rounded transition-colors flex items-center text-sm"
-                    onClick={submitCode}
-                    disabled={!selectedProblem || isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white mr-1 sm:mr-2"></div>
-                        <span className="hidden sm:inline">Submitting...</span>
-                        <span className="sm:hidden">Submit</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                        <span className="hidden sm:inline">Submit</span>
-                        <span className="sm:hidden">Submit</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-                <button
-                  className="text-sm text-gray-400 hover:text-white flex items-center"
-                  onClick={() => setIsResultsOpen(!isResultsOpen)}
-                >
-                  {isResultsOpen ? (
-                    <>
-                      <ChevronDown className="w-4 h-4 mr-1" />
-                      <span className="hidden sm:inline">Hide Results</span>
-                    </>
-                  ) : (
-                    <>
-                      <ChevronUp className="w-4 h-4 mr-1" />
-                      <span className="hidden sm:inline">Show Results</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* Test Results Panel */}
-              {isResultsOpen && (
-                <div className="h-1/3 border-t border-gray-800 overflow-y-auto custom-scrollbar">
-                  {testResults ? (
-                    <div className="p-4">
-                      {testResults.passed ? (
-                        <div className="bg-green-900/20 border border-green-800/50 p-4 rounded-lg mb-4">
-                          <div className="flex items-center text-green-300">
-                            <CheckCircle className="w-5 h-5 mr-2" />
-                            <span className="font-medium">
-                              All test cases passed!
-                            </span>
-                          </div>
-                          <div className="mt-2 text-sm text-green-300">
-                            Your solution was accepted!
-                          </div>
-                          <button
-                            className="mt-3 bg-green-800 hover:bg-green-700 text-white text-sm py-1 px-3 rounded flex items-center"
-                            onClick={() =>
-                              setShowOptimalSolution(!showOptimalSolution)
-                            }
-                          >
-                            <Lightbulb className="w-4 h-4 mr-1" />
-                            {showOptimalSolution ? "Hide" : "View"} Optimal
-                            Solution
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="bg-red-900/20 border border-red-800/50 p-4 rounded-lg mb-4">
-                          <div className="flex items-center text-red-300">
-                            <XCircle className="w-5 h-5 mr-2" />
-                            <span className="font-medium">
-                              {testResults.errors?.length > 0
-                                ? "Solution Failed"
-                                : "Some test cases failed"}
-                            </span>
-                          </div>
-                          {testResults.errors?.map((error, idx) => (
-                            <div
-                              key={idx}
-                              className="mt-2 text-sm text-red-300"
+                      {showLanguageDropdown && (
+                        <div className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded shadow-lg z-10">
+                          {languages.map((lang) => (
+                            <button
+                              key={lang.id}
+                              className={`block w-full text-left px-3 py-2 text-sm hover:bg-gray-700 ${
+                                language === lang.id
+                                  ? "text-orange-500"
+                                  : "text-white"
+                              }`}
+                              onClick={() => {
+                                setLanguage(lang.id);
+                                setShowLanguageDropdown(false);
+                              }}
                             >
-                              <span className="font-medium">{error.type}:</span>{" "}
-                              {error.message}
-                            </div>
+                              {lang.name}
+                            </button>
                           ))}
                         </div>
                       )}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      className="p-1 rounded hover:bg-gray-800"
+                      onClick={copyCode}
+                    >
+                      <Copy className="w-4 h-4 text-white" />
+                    </button>
+                    <button
+                      className="p-1 rounded hover:bg-gray-800"
+                      onClick={downloadCode}
+                    >
+                      <Download className="w-4 h-4 text-white" />
+                    </button>
+                    <button className="p-1 rounded hover:bg-gray-800 hidden sm:block">
+                      <Share2 className="w-4 h-4 text-white" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-hidden relative">
+                  <CodeEditor
+                    code={code}
+                    setCode={setCode}
+                    language={language}
+                  />
+                </div>
+                <div className="p-4 border-t border-gray-800 flex items-center justify-between flex-wrap gap-2 flex-shrink-0">
+                  <div className="flex items-center space-x-2">
+                    <button
+                      className="bg-orange-500 hover:bg-orange-600 disabled:bg-orange-400 text-white font-medium py-2 px-3 sm:px-4 rounded transition-colors flex items-center text-sm"
+                      onClick={runTests}
+                      disabled={!selectedProblem || isTesting}
+                    >
+                      {isTesting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white mr-1 sm:mr-2"></div>
+                          <span className="hidden sm:inline">Running...</span>
+                          <span className="sm:hidden">Run</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                          <span className="hidden sm:inline">Run Code</span>
+                          <span className="sm:hidden">Run</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      className="bg-green-600 hover:bg-green-700 disabled:bg-green-500 text-white font-medium py-2 px-3 sm:px-4 rounded transition-colors flex items-center text-sm"
+                      onClick={submitCode}
+                      disabled={!selectedProblem || isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white mr-1 sm:mr-2"></div>
+                          <span className="hidden sm:inline">
+                            Submitting...
+                          </span>
+                          <span className="sm:hidden">Submit</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                          <span className="hidden sm:inline">Submit</span>
+                          <span className="sm:hidden">Submit</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <button
+                    className="text-sm text-gray-400 hover:text-white flex items-center"
+                    onClick={() => setIsResultsOpen(!isResultsOpen)}
+                  >
+                    {isResultsOpen ? (
+                      <>
+                        <ChevronDown className="w-4 h-4 mr-1" />
+                        <span className="hidden sm:inline">Hide Results</span>
+                      </>
+                    ) : (
+                      <>
+                        <ChevronUp className="w-4 h-4 mr-1" />
+                        <span className="hidden sm:inline">Show Results</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
 
-                      {testResults.test_cases && (
-                        <div className="mb-4">
-                          <h4 className="font-medium mb-2 text-white">
-                            Test Cases
-                          </h4>
-                          <div className="space-y-2">
-                            {testResults.test_cases.map((testCase, idx) =>
-                              renderTestCase(testCase, idx)
-                            )}
+              {/* Resize Handle */}
+              <div
+                className="relative group cursor-row-resize bg-gray-800 hover:bg-gray-700 transition-colors flex items-center justify-center"
+                style={{ height: "8px" }}
+                onMouseDown={() => setIsResizing(true)}
+              >
+                <GripVertical className="w-4 h-4 text-gray-500 group-hover:text-gray-300" />
+              </div>
+
+              {/* Test Results Panel */}
+              <div
+                className="overflow-y-auto custom-scrollbar bg-black"
+                style={{
+                  height: `${100 - editorHeight}%`,
+                  minHeight: "20%",
+                  display: isResultsOpen ? "block" : "none",
+                }}
+              >
+                {testResults ? (
+                  <div className="p-4">
+                    {testResults.passed ? (
+                      <div className="bg-green-900/20 border border-green-800/50 p-4 rounded-lg mb-4">
+                        <div className="flex items-center text-green-300">
+                          <CheckCircle className="w-5 h-5 mr-2" />
+                          <span className="font-medium">
+                            All test cases passed!
+                          </span>
+                        </div>
+                        <div className="mt-2 text-sm text-green-300">
+                          Your solution was accepted!
+                        </div>
+                        <button
+                          className="mt-3 bg-green-800 hover:bg-green-700 text-white text-sm py-1 px-3 rounded flex items-center"
+                          onClick={() =>
+                            setShowOptimalSolution(!showOptimalSolution)
+                          }
+                        >
+                          <Lightbulb className="w-4 h-4 mr-1" />
+                          {showOptimalSolution ? "Hide" : "View"} Optimal
+                          Solution
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="bg-red-900/20 border border-red-800/50 p-4 rounded-lg mb-4">
+                        <div className="flex items-center text-red-300">
+                          <XCircle className="w-5 h-5 mr-2" />
+                          <span className="font-medium">
+                            {testResults.errors?.length > 0
+                              ? "Solution Failed"
+                              : "Some test cases failed"}
+                          </span>
+                        </div>
+                        {testResults.errors?.map((error, idx) => (
+                          <div key={idx} className="mt-2 text-sm text-red-300">
+                            <span className="font-medium">{error.type}:</span>{" "}
+                            {error.message}
                           </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {testResults.test_cases && (
+                      <div className="mb-4">
+                        <h4 className="font-medium mb-2 text-white">
+                          Test Cases (
+                          {
+                            testResults.test_cases.filter((tc) => tc.passed)
+                              .length
+                          }
+                          /{testResults.test_cases.length} passed)
+                        </h4>
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {testResults.test_cases.map((testCase, idx) =>
+                            renderTestCase(testCase, idx)
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Efficiency Analysis */}
+                    {testResults.efficiency &&
+                      renderEfficiencyAnalysis(testResults.efficiency)}
+
+                    {testResults.passed &&
+                      showOptimalSolution &&
+                      selectedProblem?.optimal_solution && (
+                        <div className="mt-4">
+                          <h4 className="font-medium mb-2 flex items-center text-white">
+                            <Lightbulb className="w-4 h-4 mr-2 text-yellow-500" />
+                            Optimal Solution
+                          </h4>
+                          <div className="bg-gray-800/50 p-4 rounded-lg mb-3 overflow-x-auto">
+                            <pre className="text-sm font-mono whitespace-pre-wrap text-white">
+                              {selectedProblem.optimal_solution}
+                            </pre>
+                          </div>
+                          {selectedProblem.optimal_explanation && (
+                            <div className="bg-blue-900/20 border border-blue-800/50 p-3 rounded-lg">
+                              <h5 className="font-medium text-blue-300 mb-1">
+                                Explanation
+                              </h5>
+                              <p className="text-sm text-blue-300">
+                                {selectedProblem.optimal_explanation}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       )}
-
-                      {testResults.passed &&
-                        showOptimalSolution &&
-                        selectedProblem?.optimal_solution && (
-                          <div className="mt-4">
-                            <h4 className="font-medium mb-2 flex items-center text-white">
-                              <Lightbulb className="w-4 h-4 mr-2 text-yellow-500" />
-                              Optimal Solution
-                            </h4>
-                            <div className="bg-gray-800/50 p-4 rounded-lg mb-3 overflow-x-auto">
-                              <pre className="text-sm font-mono whitespace-pre-wrap text-white">
-                                {selectedProblem.optimal_solution}
-                              </pre>
-                            </div>
-                            {selectedProblem.optimal_explanation && (
-                              <div className="bg-blue-900/20 border border-blue-800/50 p-3 rounded-lg">
-                                <h5 className="font-medium text-blue-300 mb-1">
-                                  Explanation
-                                </h5>
-                                <p className="text-sm text-blue-300">
-                                  {selectedProblem.optimal_explanation}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                    </div>
-                  ) : (
-                    <div className="p-4 text-center text-gray-500">
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-gray-500 h-full flex items-center justify-center">
+                    <div>
                       <Clock className="w-8 h-8 mx-auto mb-2" />
                       <p>Run your code to see test results</p>
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

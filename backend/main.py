@@ -1,11 +1,12 @@
 from fastapi import FastAPI,HTTPException,Depends
 from sqlalchemy import  text
 from fastapi.middleware.cors import CORSMiddleware
-from schema.schemas import SignupRequest,LoginRequest,ExplainationResponse,ExplainationRequest,ProblemRequest
+from schema.schemas import SignupRequest,LoginRequest,ExplainationResponse,ExplainationRequest,ProblemRequest,SolutionRequest
 from dotenv import load_dotenv
 from controllers.auth import signup,login,get_current_user
 from controllers.profile_details import get_profile,get_my_concepts
-from controllers.generative import generate_explaination,generate_problems
+from controllers.generative import generate_explaination,generate_problems,evaluate_solution
+from agents.testing_agent import test_agent
 from config import engine,SessionLocal
 load_dotenv()
 
@@ -62,3 +63,11 @@ def get_user_concepts(user=Depends(get_current_user)):
 @app.post("/api/generate-problems")
 def get_problems(request:ProblemRequest,user=Depends(get_current_user)):
     return generate_problems(request,user)
+
+@app.post("/api/evaluate-solution")
+def evaluate_the_solution(request:SolutionRequest,user=Depends(get_current_user)):
+    return evaluate_solution(request,user)
+
+@app.post("/api/run-tests")
+def run_tests_on_problem(request:SolutionRequest,user=Depends(get_current_user)):
+    return test_agent(request,user)
