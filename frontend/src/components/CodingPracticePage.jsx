@@ -200,11 +200,12 @@ const CodingPracticePage = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           problem_id: selectedProblem.id,
           code: code,
-          language: language,
+          language: language.toLowerCase(),
         }),
       });
 
@@ -241,11 +242,12 @@ const CodingPracticePage = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           problem_id: selectedProblem.id,
           code: code,
-          language: language,
+          language: language.toLowerCase(),
         }),
       });
 
