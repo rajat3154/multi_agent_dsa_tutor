@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import theme from "@/components/theme";
 import {
   BookOpen,
@@ -7,11 +7,9 @@ import {
   BarChart3,
   MessageCircle,
   User,
-  Settings,
   LogOut,
   Menu,
   X,
-  Users,
 } from "lucide-react";
 import {
   NavigationMenu,
@@ -32,13 +30,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import AIMentor from "@/components/AIMentor";
 import { toast } from "sonner";
-import { useContext } from "react";
 import { UserContext } from "@/contexts/UserContext";
+
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const { user, setUser } = useContext(UserContext);
+  const { user } = useContext(UserContext);
   const navigate = useNavigate();
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) setIsLoggedIn(true);
@@ -88,12 +87,12 @@ const Navbar = () => {
             {/* Desktop Navigation */}
             <div className="hidden md:block">
               <NavigationMenu>
-                <NavigationMenuList className="space-x-1">
+                <NavigationMenuList className="flex space-x-2">
                   {menuItems.map((item, index) => (
                     <NavigationMenuItem key={index}>
                       <NavigationMenuLink
                         href={item.href}
-                        className="px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center hover:bg-gray-800"
+                        className="px-3 py-2 rounded-md text-sm font-medium flex items-center hover:bg-gray-800 transition-colors"
                         style={{ color: theme.colors.text }}
                       >
                         {React.cloneElement(item.icon, {
@@ -113,34 +112,30 @@ const Navbar = () => {
               {isLoggedIn ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="relative h-10 w-10 rounded-full ml-2 cursor-pointer"
+                    <button
+                      className="relative h-10 w-10 rounded-full ml-2 cursor-pointer p-0 border-2"
+                     
                     >
-                      <Avatar
-                        className="h-10 w-10 cursor-pointer"
-                        style={{ border: `2px solid ${theme.colors.primary}` }}
-                      >
-                        <Avatar>
-                          <AvatarImage src={user.photo} alt="User" />
-                          <AvatarFallback>U</AvatarFallback>
-                        </Avatar>
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage
+                          src={user.photo}
+                          alt={user.name || "User"}
+                        />
+                        <AvatarFallback>U</AvatarFallback>
                       </Avatar>
-                    </Button>
+                    </button>
                   </DropdownMenuTrigger>
 
                   <DropdownMenuContent
-                    className="w-56 border-0 shadow-lg "
+                    className="w-56 shadow-lg"
                     style={{
                       backgroundColor: theme.colors.background,
                       color: theme.colors.text,
                     }}
                     align="end"
-                    forceMount
                   >
                     <DropdownMenuLabel className="font-normal cursor-pointer">
                       <div className="flex items-center space-x-3">
-                        {/* Avatar Image */}
                         <Avatar
                           className="h-10 w-10"
                           style={{
@@ -151,9 +146,8 @@ const Navbar = () => {
                             src={user.photo}
                             alt={user.name || "User"}
                           />
+                          <AvatarFallback>U</AvatarFallback>
                         </Avatar>
-
-                        {/* Name and Email */}
                         <div className="flex flex-col space-y-1">
                           <p className="text-sm font-medium leading-none">
                             {user.name || "User"}
@@ -169,19 +163,13 @@ const Navbar = () => {
                     </DropdownMenuLabel>
 
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="cursor-pointer"
-                      onClick={() => navigate("/profile")}
-                    >
-                      <User className="mr-2 h-4 w-4 cursor-pointer" /> Profile
+                    <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4" /> Profile
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={handleLogout}
-                      className="cursor-pointer"
-                    >
-                      <LogOut className="mr-2 h-4 w-4 cursor-pointer" /> Log out
+                    <DropdownMenuItem onClick={handleLogout}className="cursor-pointer">
+                      <LogOut className="mr-2 h-4 w-4" /> Log out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
