@@ -172,23 +172,7 @@ setIsLoading(false);
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between py-2">
-                  <div className="flex items-center space-x-3">
-                    <Checkbox
-                      id="remember"
-                      checked={rememberMe}
-                      onCheckedChange={(checked) =>
-                        setRememberMe(checked === true)
-                      }
-                      className="data-[state=checked]:bg-[var(--color-primary)] data-[state=checked]:border-[var(--color-primary)] h-4 w-4"
-                    />
-                    <label
-                      htmlFor="remember"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Remember me
-                    </label>
-                  </div>
+                <div className="flex justify-end py-2">
                   <a
                     href="#"
                     className="text-sm text-[var(--color-primary)] hover:underline"

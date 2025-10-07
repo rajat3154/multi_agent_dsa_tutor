@@ -106,7 +106,6 @@ const TopicUnderstanding = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [content, setContent] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [error, setError] = useState(null);
   const [markdownContent, setMarkdownContent] = useState("");
@@ -122,7 +121,8 @@ const TopicUnderstanding = () => {
   const streamingIntervalRef = useRef(null);
   const topicInputRef = useRef(null);
   const subtopicInputRef = useRef(null);
-const API_URL = import.meta.env.VITE_BACKEND_URL;
+  const API_URL = import.meta.env.VITE_BACKEND_URL;
+
   const languages = [
     { id: "python", name: "Python" },
     { id: "java", name: "Java" },
@@ -140,6 +140,7 @@ const API_URL = import.meta.env.VITE_BACKEND_URL;
   const getAuthToken = () => {
     return localStorage.getItem("token");
   };
+
   const filteredDataStructures = dataStructures
     .map((ds) => ({
       ...ds,
@@ -158,6 +159,7 @@ const API_URL = import.meta.env.VITE_BACKEND_URL;
       )
     );
   };
+
   const streamResponse = (title, text) => {
     setIsStreaming(true);
     setStreamingTitle(title);
@@ -193,21 +195,18 @@ const API_URL = import.meta.env.VITE_BACKEND_URL;
     }
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/generate-explaination`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            concept: selectedSubtopic,
-            language: language,
-            difficulty: difficulty,
-          }),
-        }
-      );
+      const response = await fetch(`${API_URL}/api/generate-explaination`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          concept: selectedSubtopic,
+          language: language,
+          difficulty: difficulty,
+        }),
+      });
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -461,7 +460,6 @@ const API_URL = import.meta.env.VITE_BACKEND_URL;
     </div>
   );
 
-  
   const isAuthenticated = user.isLoggedIn;
 
   return (
@@ -555,484 +553,362 @@ const API_URL = import.meta.env.VITE_BACKEND_URL;
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header - Compact on mobile */}
-          <div className="p-3 sm:p-4 border-b border-gray-800 flex items-center justify-between">
-            <div className="flex items-center">
-              <button
-                onClick={() => setIsSidebarOpen(true)}
-                className="lg:hidden p-2 rounded-lg mr-2 text-gray-400 hover:text-white"
-              >
-                <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-              <button
-                onClick={() => setIsConfigOpen(!isConfigOpen)}
-                className="p-2 rounded-lg mr-2 text-gray-400 hover:text-white"
-              >
-                <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-              <div className="hidden sm:block">
-                <h1 className="text-xl font-bold">Topic Explanation</h1>
-                <p className="text-sm text-gray-400">
-                  Learn data structures with AI-powered explanations
-                </p>
-              </div>
-              <div className="sm:hidden">
-                <h1 className="text-lg font-bold">Topic Explanation</h1>
-              </div>
+        <div className="flex-1 flex overflow-hidden">
+          {/* Configuration Panel - Always Open */}
+          <div className="w-full lg:w-1/3 p-3 sm:p-4 lg:p-6 border-r border-gray-800 overflow-y-auto custom-scrollbar">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="font-bold flex items-center text-sm sm:text-base">
+                <Target className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-[var(--color-primary)]" />
+                Configuration
+              </h3>
             </div>
-            <div className="flex items-center space-x-1 sm:space-x-2">
-              {isAuthenticated && (
-                <div className="hidden sm:flex items-center mr-4 text-sm text-gray-400">
-                  <span>Welcome, {user.name}</span>
-                </div>
-              )}
-              <button
-                className={`p-2 rounded-lg ${
-                  isBookmarked
-                    ? "text-[var(--color-primary)]"
-                    : "text-gray-400 hover:text-white"
-                }`}
-                onClick={() => setIsBookmarked(!isBookmarked)}
-              >
-                {isBookmarked ? (
-                  <BookmarkCheck className="w-4 h-4 sm:w-5 sm:h-5" />
-                ) : (
-                  <Bookmark className="w-4 h-4 sm:w-5 sm:h-5" />
-                )}
-              </button>
-              <button
-                className="p-2 rounded-lg text-gray-400 hover:text-white"
-                onClick={handleDownload}
-                disabled={!markdownContent}
-              >
-                <Download className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-              <button className="p-2 rounded-lg text-gray-400 hover:text-white">
-                <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-            </div>
-          </div>
 
-          {/* Authentication Warning */}
-          {!isAuthenticated && (
-            <div className="bg-yellow-900/20 border border-yellow-800/50 p-3 sm:p-4 m-3 sm:m-4 rounded-xl">
-              <div className="flex items-center text-yellow-300">
-                <Star className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                <span className="font-medium text-sm sm:text-base">
-                  Authentication Required
-                </span>
-              </div>
-              <p className="text-yellow-300 mt-2 text-xs sm:text-sm">
-                Please log in to generate AI-powered explanations and track your
-                learning progress.
-              </p>
-            </div>
-          )}
-
-          {/* Loading indicator */}
-          {(isGenerating || isStreaming) && (
-            <div className="relative">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gray-800">
-                <div
-                  className="h-full bg-gradient-to-r from-[var(--color-primary)] to-purple-600 transition-all duration-300 ease-out"
-                  style={{
-                    width: isStreaming ? "100%" : "30%",
-                    background: isStreaming
-                      ? "linear-gradient(90deg, var(--color-primary), #9333ea, var(--color-primary))"
-                      : "linear-gradient(90deg, var(--color-primary), #3b82f6)",
-                    backgroundSize: isStreaming ? "200% 100%" : "100% 100%",
-                    animation: isStreaming ? "shimmer 1.5s infinite" : "none",
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="flex-1 flex overflow-hidden">
-            {/* Configuration Panel - Full screen on mobile */}
-            {isConfigOpen && (
-              <div className="w-full lg:w-1/3 p-3 sm:p-4 lg:p-6 border-r border-gray-800 overflow-y-auto custom-scrollbar">
-                <div className="flex items-center justify-between mb-3 sm:mb-4">
-                  <h3 className="font-bold flex items-center text-sm sm:text-base">
-                    <Target className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-[var(--color-primary)]" />
-                    Configuration
-                  </h3>
-                  <button
-                    onClick={() => setIsConfigOpen(false)}
-                    className="p-1 rounded-lg text-gray-400 hover:text-white"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="bg-black p-3 sm:p-4 lg:p-5 rounded-xl mb-4 sm:mb-6">
-                  <div className="space-y-3 sm:space-y-4">
-                    <div>
-                      <label className="block text-xs sm:text-sm font-medium mb-2 flex items-center justify-between">
-                        <span>Topic</span>
-                        {!isEditingTopic && (
-                          <button
-                            onClick={handleEditTopic}
-                            className="text-gray-400 hover:text-[var(--color-primary)] p-1"
-                          >
-                            <Edit3 className="w-3 h-3" />
-                          </button>
-                        )}
-                      </label>
-                      {isEditingTopic ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            ref={topicInputRef}
-                            type="text"
-                            value={customTopic}
-                            onChange={(e) => setCustomTopic(e.target.value)}
-                            onKeyDown={(e) => handleKeyPress(e, "topic")}
-                            className="w-full p-2 sm:p-3 bg-gray-950 border border-[var(--color-primary)]/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] text-sm sm:text-base"
-                          />
-                          <button
-                            onClick={handleSaveTopic}
-                            className="p-2 text-green-400 hover:text-green-300 hover:bg-green-900/20 rounded-lg"
-                          >
-                            <Check className="w-3 h-3 sm:w-4 sm:h-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div
-                          className="w-full p-2 sm:p-3 bg-gray-950 border border-gray-600 rounded-lg cursor-pointer hover:border-gray-500 transition-colors text-sm sm:text-base"
-                          onClick={handleEditTopic}
-                        >
-                          {selectedTopic}
-                        </div>
-                      )}
+            <div className="bg-black p-3 sm:p-4 lg:p-5 rounded-xl mb-4 sm:mb-6">
+              <div className="space-y-3 sm:space-y-4">
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium mb-2 flex items-center justify-between">
+                    <span>Topic</span>
+                    {!isEditingTopic && (
+                      <button
+                        onClick={handleEditTopic}
+                        className="text-gray-400 hover:text-[var(--color-primary)] p-1"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                      </button>
+                    )}
+                  </label>
+                  {isEditingTopic ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={topicInputRef}
+                        type="text"
+                        value={customTopic}
+                        onChange={(e) => setCustomTopic(e.target.value)}
+                        onKeyDown={(e) => handleKeyPress(e, "topic")}
+                        className="w-full p-2 sm:p-3 bg-gray-950 border border-[var(--color-primary)]/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] text-sm sm:text-base"
+                      />
+                      <button
+                        onClick={handleSaveTopic}
+                        className="p-2 text-green-400 hover:text-green-300 hover:bg-green-900/20 rounded-lg"
+                      >
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </button>
                     </div>
-
-                    <div>
-                      <label className="block text-xs sm:text-sm font-medium mb-2 flex items-center justify-between">
-                        <span>Subtopic</span>
-                        {!isEditingSubtopic && (
-                          <button
-                            onClick={handleEditSubtopic}
-                            className="text-gray-400 hover:text-[var(--color-primary)] p-1"
-                          >
-                            <Edit3 className="w-3 h-3" />
-                          </button>
-                        )}
-                      </label>
-                      {isEditingSubtopic ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            ref={subtopicInputRef}
-                            type="text"
-                            value={customSubtopic}
-                            onChange={(e) => setCustomSubtopic(e.target.value)}
-                            onKeyDown={(e) => handleKeyPress(e, "subtopic")}
-                            className="w-full p-2 sm:p-3 bg-gray-950 border border-[var(--color-primary)]/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] text-sm sm:text-base"
-                          />
-                          <button
-                            onClick={handleSaveSubtopic}
-                            className="p-2 text-green-400 hover:text-green-300 hover:bg-green-900/20 rounded-lg"
-                          >
-                            <Check className="w-3 h-3 sm:w-4 sm:h-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div
-                          className="w-full p-2 sm:p-3 bg-gray-950 border border-gray-600 rounded-lg cursor-pointer hover:border-gray-500 transition-colors text-sm sm:text-base"
-                          onClick={handleEditSubtopic}
-                        >
-                          {selectedSubtopic}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs sm:text-sm font-medium mb-2">
-                        Programming Language
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {languages.map((lang) => (
-                          <button
-                            key={lang.id}
-                            className={`p-2 rounded-lg border transition-colors text-xs ${
-                              language === lang.id
-                                ? "bg-[var(--color-primary)]/20 border-[var(--color-primary)]/50"
-                                : "bg-gray-950 border-gray-600 hover:bg-gray-600"
-                            }`}
-                            onClick={() => setLanguage(lang.id)}
-                          >
-                            {lang.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs sm:text-sm font-medium mb-2">
-                        Difficulty Level
-                      </label>
-                      <div className="grid grid-cols-3 gap-1 sm:gap-2">
-                        {difficulties.map((diff) => (
-                          <button
-                            key={diff.id}
-                            className={`p-2 rounded-lg border transition-colors text-xs ${
-                              difficulty === diff.id
-                                ? "bg-[var(--color-primary)]/20 border-[var(--color-primary)]/50"
-                                : "bg-gray-950 border-gray-600 hover:bg-gray-600"
-                            }`}
-                            onClick={() => setDifficulty(diff.id)}
-                          >
-                            <span className="block text-xs mb-1">
-                              {diff.id === "beginner" && "🌱"}
-                              {diff.id === "intermediate" && "🚀"}
-                              {diff.id === "advanced" && "🔥"}
-                            </span>
-                            <span className="text-xs">{diff.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <button
-                      className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white font-medium py-2 sm:py-3 px-3 sm:px-4 rounded-lg transition-colors flex items-center justify-center relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
-                      onClick={handleGenerate}
-                      disabled={isGenerating || isStreaming || !isAuthenticated}
+                  ) : (
+                    <div
+                      className="w-full p-2 sm:p-3 bg-gray-950 border border-gray-600 rounded-lg cursor-pointer hover:border-gray-500 transition-colors text-sm sm:text-base"
+                      onClick={handleEditTopic}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                      {isGenerating || isStreaming ? (
-                        <>
-                          <div className="relative z-10 flex items-center">
-                            <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                            <span className="text-xs sm:text-sm">
-                              {isStreaming ? "Streaming..." : "Generating..."}
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 mr-2 relative z-10" />
-                          <span className="relative z-10">
-                            {isAuthenticated
-                              ? "Generate Explanation"
-                              : "Please Log In"}
-                          </span>
-                        </>
-                      )}
-                    </button>
+                      {selectedTopic}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium mb-2 flex items-center justify-between">
+                    <span>Subtopic</span>
+                    {!isEditingSubtopic && (
+                      <button
+                        onClick={handleEditSubtopic}
+                        className="text-gray-400 hover:text-[var(--color-primary)] p-1"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                      </button>
+                    )}
+                  </label>
+                  {isEditingSubtopic ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={subtopicInputRef}
+                        type="text"
+                        value={customSubtopic}
+                        onChange={(e) => setCustomSubtopic(e.target.value)}
+                        onKeyDown={(e) => handleKeyPress(e, "subtopic")}
+                        className="w-full p-2 sm:p-3 bg-gray-950 border border-[var(--color-primary)]/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] text-sm sm:text-base"
+                      />
+                      <button
+                        onClick={handleSaveSubtopic}
+                        className="p-2 text-green-400 hover:text-green-300 hover:bg-green-900/20 rounded-lg"
+                      >
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className="w-full p-2 sm:p-3 bg-gray-950 border border-gray-600 rounded-lg cursor-pointer hover:border-gray-500 transition-colors text-sm sm:text-base"
+                      onClick={handleEditSubtopic}
+                    >
+                      {selectedSubtopic}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium mb-2">
+                    Programming Language
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {languages.map((lang) => (
+                      <button
+                        key={lang.id}
+                        className={`p-2 rounded-lg border transition-colors text-xs ${
+                          language === lang.id
+                            ? "bg-[var(--color-primary)]/20 border-[var(--color-primary)]/50"
+                            : "bg-gray-950 border-gray-600 hover:bg-gray-600"
+                        }`}
+                        onClick={() => setLanguage(lang.id)}
+                      >
+                        {lang.name}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                <div className="bg-gray-800/50 p-3 sm:p-4 lg:p-5 rounded-xl">
-                  <h3 className="font-bold mb-3 sm:mb-4 flex items-center text-sm sm:text-base">
-                    <Zap className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-[var(--color-primary)]" />
-                    Pro Tips
-                  </h3>
-                  <ul className="space-y-2 text-xs sm:text-sm">
-                    <li className="flex items-start">
-                      <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>Select specific topics for focused learning</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>Choose your preferred programming language</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>Adjust difficulty based on your knowledge</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>
-                        Generated explanations are saved to your learning
-                        history
-                      </span>
-                    </li>
-                  </ul>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium mb-2">
+                    Difficulty Level
+                  </label>
+                  <div className="grid grid-cols-3 gap-1 sm:gap-2">
+                    {difficulties.map((diff) => (
+                      <button
+                        key={diff.id}
+                        className={`p-2 rounded-lg border transition-colors text-xs ${
+                          difficulty === diff.id
+                            ? "bg-[var(--color-primary)]/20 border-[var(--color-primary)]/50"
+                            : "bg-gray-950 border-gray-600 hover:bg-gray-600"
+                        }`}
+                        onClick={() => setDifficulty(diff.id)}
+                      >
+                        <span className="block text-xs mb-1">
+                          {diff.id === "beginner" && "🌱"}
+                          {diff.id === "intermediate" && "🚀"}
+                          {diff.id === "advanced" && "🔥"}
+                        </span>
+                        <span className="text-xs">{diff.name}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                <button
+                  className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white font-medium py-2 sm:py-3 px-3 sm:px-4 rounded-lg transition-colors flex items-center justify-center relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                  onClick={handleGenerate}
+                  disabled={isGenerating || isStreaming || !isAuthenticated}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                  {isGenerating || isStreaming ? (
+                    <>
+                      <div className="relative z-10 flex items-center">
+                        <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        <span className="text-xs sm:text-sm">
+                          {isStreaming ? "Streaming..." : "Generating..."}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 mr-2 relative z-10" />
+                      <span className="relative z-10">
+                        {isAuthenticated
+                          ? "Generate Explanation"
+                          : "Please Log In"}
+                      </span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-gray-800/50 p-3 sm:p-4 lg:p-5 rounded-xl">
+              <h3 className="font-bold mb-3 sm:mb-4 flex items-center text-sm sm:text-base">
+                <Zap className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-[var(--color-primary)]" />
+                Pro Tips
+              </h3>
+              <ul className="space-y-2 text-xs sm:text-sm">
+                <li className="flex items-start">
+                  <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>Select specific topics for focused learning</span>
+                </li>
+                <li className="flex items-start">
+                  <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>Choose your preferred programming language</span>
+                </li>
+                <li className="flex items-start">
+                  <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>Adjust difficulty based on your knowledge</span>
+                </li>
+                <li className="flex items-start">
+                  <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>
+                    Generated explanations are saved to your learning history
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Content Display */}
+          <div className="w-full lg:w-2/3 p-3 sm:p-4 lg:p-6 overflow-y-auto custom-scrollbar">
+            {error && (
+              <div className="bg-red-900/20 border border-red-800/50 p-3 sm:p-4 rounded-xl mb-4 sm:mb-6">
+                <div className="flex items-center text-red-300">
+                  <X className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                  <span className="font-medium text-sm sm:text-base">
+                    Error
+                  </span>
+                </div>
+                <p className="text-red-300 mt-2 text-xs sm:text-sm">{error}</p>
               </div>
             )}
 
-            {/* Content Display */}
-            <div
-              className={`${
-                isConfigOpen ? "w-full lg:w-2/3" : "w-full"
-              } p-3 sm:p-4 lg:p-6 overflow-y-auto custom-scrollbar`}
-            >
-              {!isConfigOpen && (
-                <button
-                  onClick={() => setIsConfigOpen(true)}
-                  className="mb-3 sm:mb-4 bg-gray-800 hover:bg-gray-700 text-white font-medium py-2 px-3 sm:px-4 rounded-lg transition-colors flex items-center text-sm sm:text-base"
-                >
-                  <Settings className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                  Show Configuration
-                </button>
-              )}
-
-              {error && (
-                <div className="bg-red-900/20 border border-red-800/50 p-3 sm:p-4 rounded-xl mb-4 sm:mb-6">
-                  <div className="flex items-center text-red-300">
-                    <X className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                    <span className="font-medium text-sm sm:text-base">
-                      Error
-                    </span>
+            {isGenerating && !isStreaming ? (
+              <ElegantLoader />
+            ) : isStreaming || content ? (
+              <div className="prose prose-invert max-w-none">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-bold mb-2">
+                      {isStreaming ? streamingTitle : content.title}
+                    </h1>
+                    <div className="flex items-center text-xs sm:text-sm text-gray-400 flex-wrap gap-1 sm:gap-2">
+                      <span className="flex items-center">
+                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                        AI-Generated
+                      </span>
+                      <span>•</span>
+                      <span>
+                        {difficulty.charAt(0).toUpperCase() +
+                          difficulty.slice(1)}{" "}
+                        level
+                      </span>
+                      <span>•</span>
+                      <span>
+                        {languages.find((l) => l.id === language)?.name}{" "}
+                        examples
+                      </span>
+                      {isAuthenticated && (
+                        <>
+                          <span>•</span>
+                          <span className="text-green-400 text-xs">
+                            Saved to profile
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-red-300 mt-2 text-xs sm:text-sm">
-                    {error}
+                  <button
+                    className="p-2 rounded-lg text-gray-400 hover:text-white"
+                    onClick={handleGenerate}
+                    disabled={isGenerating || isStreaming || !isAuthenticated}
+                  >
+                    <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </button>
+                </div>
+
+                {isStreaming ? (
+                  <MarkdownRenderer
+                    content={streamingContent}
+                    isStreaming={true}
+                  />
+                ) : (
+                  <MarkdownRenderer
+                    content={content.content}
+                    isStreaming={false}
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="h-full flex flex-col items-center mt-40">
+                <div className="text-center max-w-md px-4">
+                  <div className="bg-gray-800/50 p-4 sm:p-5 rounded-full inline-block mb-3 sm:mb-4">
+                    <BookOpen className="w-8 h-8 sm:w-10 sm:h-10 text-[var(--color-primary)]" />
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-bold mb-2">
+                    Welcome to Topic Explanations
+                  </h2>
+                  <p className="text-gray-400 mb-3 sm:mb-4 text-sm sm:text-base">
+                    {isAuthenticated
+                      ? `Hi ${user.name}! Select a data structure, subtopic, programming language, and difficulty level to get started. Your progress will be saved to your learning history.`
+                      : "Please log in to access AI-powered explanations and track your learning progress."}
                   </p>
+                  <button
+                    className="bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white font-medium py-2 px-3 sm:py-2 sm:px-4 rounded-lg transition-colors flex items-center mx-auto disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                    onClick={handleGenerate}
+                    disabled={!isAuthenticated}
+                  >
+                    <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                    {isAuthenticated ? "Generate Explanation" : "Please Log In"}
+                  </button>
                 </div>
-              )}
-
-              {isGenerating && !isStreaming ? (
-                <ElegantLoader />
-              ) : isStreaming || content ? (
-                <div className="prose prose-invert max-w-none">
-                  <div className="flex items-center justify-between mb-4 sm:mb-6">
-                    <div>
-                      <h1 className="text-xl sm:text-2xl font-bold mb-2">
-                        {isStreaming ? streamingTitle : content.title}
-                      </h1>
-                      <div className="flex items-center text-xs sm:text-sm text-gray-400 flex-wrap gap-1 sm:gap-2">
-                        <span className="flex items-center">
-                          <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                          AI-Generated
-                        </span>
-                        <span>•</span>
-                        <span>
-                          {difficulty.charAt(0).toUpperCase() +
-                            difficulty.slice(1)}{" "}
-                          level
-                        </span>
-                        <span>•</span>
-                        <span>
-                          {languages.find((l) => l.id === language)?.name}{" "}
-                          examples
-                        </span>
-                        {isAuthenticated && (
-                          <>
-                            <span>•</span>
-                            <span className="text-green-400 text-xs">
-                              Saved to profile
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      className="p-2 rounded-lg text-gray-400 hover:text-white"
-                      onClick={handleGenerate}
-                      disabled={isGenerating || isStreaming || !isAuthenticated}
-                    >
-                      <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                  </div>
-
-                  {isStreaming ? (
-                    <MarkdownRenderer
-                      content={streamingContent}
-                      isStreaming={true}
-                    />
-                  ) : (
-                    <MarkdownRenderer
-                      content={content.content}
-                      isStreaming={false}
-                    />
-                  )}
-                </div>
-              ) : (
-                <div className="h-full flex items-center justify-center">
-                  <div className="text-center max-w-md px-4">
-                    <div className="bg-gray-800/50 p-4 sm:p-5 rounded-full inline-block mb-3 sm:mb-4">
-                      <BookOpen className="w-8 h-8 sm:w-10 sm:h-10 text-[var(--color-primary)]" />
-                    </div>
-                    <h2 className="text-lg sm:text-xl font-bold mb-2">
-                      Welcome to Topic Explanations
-                    </h2>
-                    <p className="text-gray-400 mb-3 sm:mb-4 text-sm sm:text-base">
-                      {isAuthenticated
-                        ? `Hi ${user.name}! Select a data structure, subtopic, programming language, and difficulty level to get started. Your progress will be saved to your learning history.`
-                        : "Please log in to access AI-powered explanations and track your learning progress."}
-                    </p>
-                    <button
-                      className="bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white font-medium py-2 px-3 sm:py-2 sm:px-4 rounded-lg transition-colors flex items-center mx-auto disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
-                      onClick={handleGenerate}
-                      disabled={!isAuthenticated}
-                    >
-                      <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                      {isAuthenticated
-                        ? "Generate Explanation"
-                        : "Please Log In"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* CSS for styling */}
-        <style jsx>{`
-          .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
-          }
-
-          .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(55, 65, 81, 0.3);
-            border-radius: 2px;
-          }
-
-          .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(75, 85, 99, 0.5);
-            border-radius: 2px;
-          }
-
-          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(107, 114, 128, 0.7);
-          }
-
-          @keyframes shimmer {
-            0% {
-              background-position: -200% 0;
-            }
-            100% {
-              background-position: 200% 0;
-            }
-          }
-
-          /* Mobile-specific optimizations */
-          @media (max-width: 640px) {
-            .markdown-content pre {
-              font-size: 0.75rem;
-            }
-
-            .markdown-content table {
-              font-size: 0.7rem;
-            }
-
-            .markdown-content code {
-              word-break: break-word;
-            }
-          }
-
-          @media (max-width: 768px) {
-            .prose {
-              font-size: 0.875rem;
-            }
-
-            .prose h1 {
-              font-size: 1.25rem;
-            }
-
-            .prose h2 {
-              font-size: 1.125rem;
-            }
-
-            .prose h3 {
-              font-size: 1rem;
-            }
-          }
-        `}</style>
       </div>
+
+      {/* CSS for styling */}
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+          height: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(55, 65, 81, 0.3);
+          border-radius: 2px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(75, 85, 99, 0.5);
+          border-radius: 2px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(107, 114, 128, 0.7);
+        }
+
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+
+        /* Mobile-specific optimizations */
+        @media (max-width: 640px) {
+          .markdown-content pre {
+            font-size: 0.75rem;
+          }
+
+          .markdown-content table {
+            font-size: 0.7rem;
+          }
+
+          .markdown-content code {
+            word-break: break-word;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .prose {
+            font-size: 0.875rem;
+          }
+
+          .prose h1 {
+            font-size: 1.25rem;
+          }
+
+          .prose h2 {
+            font-size: 1.125rem;
+          }
+
+          .prose h3 {
+            font-size: 1rem;
+          }
+        }
+      `}</style>
     </>
   );
 };

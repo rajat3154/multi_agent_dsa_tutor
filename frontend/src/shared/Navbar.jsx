@@ -33,7 +33,7 @@ import { useNavigate } from "react-router-dom";
 import AIMentor from "@/components/AIMentor";
 import { toast } from "sonner";
 import { useContext } from "react";
-import { UserContext } from "@/contexts/UserContext"; 
+import { UserContext } from "@/contexts/UserContext";
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);

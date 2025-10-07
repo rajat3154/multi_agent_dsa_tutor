@@ -17,11 +17,13 @@ import {
 } from "lucide-react";
 
 import { applyTheme } from "./theme"; // adjust path if needed
+import { useNavigate } from "react-router-dom";
 
-const HeroSection = () => {
+const HeroSection = ({ scrollToFeatures }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [codeComplete, setCodeComplete] = useState(false);
   const codeRef = useRef(null);
+  const navigate=useNavigate();
 
   const codeSnippet = `# Binary Search in Python
 def binary_search(arr, target):
@@ -130,7 +132,7 @@ print(f"Found at index: {result}")`;
         }, 3000);
         return () => clearTimeout(flipBackTimer);
       }
-    }, 15);
+    }, 3);
   };
 
   return (
@@ -164,11 +166,14 @@ print(f"Found at index: {result}")`;
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-6 md:mb-8">
-              <button className="bg-[var(--color-primary)] hover:bg-orange-600 text-white font-medium py-3 px-6 md:px-8 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 group cursor-pointer">
+              <button
+                className="bg-[var(--color-primary)] hover:bg-orange-600 text-white font-medium py-3 px-6 md:px-8 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 group cursor-pointer"
+                onClick={scrollToFeatures}
+              >
                 Start Learning Now
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
-              <button className="bg-transparent hover:bg-white/5 text-white font-medium py-3 px-6 md:px-8 rounded-lg border border-white/10 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer">
+              <button className="bg-transparent hover:bg-white/5 text-white font-medium py-3 px-6 md:px-8 rounded-lg border border-white/10 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer" onClick={()=>{navigate("/practice")}}>
                 <Play className="w-5 h-5" />
                 Code Along with AI
               </button>

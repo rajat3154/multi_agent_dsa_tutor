@@ -27,6 +27,8 @@ import {
   Star,
   Sparkles,
   GripVertical,
+  Zap,
+  TrendingUp,
 } from "lucide-react";
 import Navbar from "@/shared/Navbar";
 import { UserContext } from "@/contexts/UserContext";
@@ -49,9 +51,14 @@ const CodingPracticePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // New states for dropdowns
+  const [showTopicsDropdown, setShowTopicsDropdown] = useState(false);
+  const [showProblemsDropdown, setShowProblemsDropdown] = useState(false);
 
   // Adjustable panel heights
-  const [editorHeight, setEditorHeight] = useState(60); // percentage of available space
+  const [editorHeight, setEditorHeight] = useState(60);
   const [isResizing, setIsResizing] = useState(false);
 
   const API_URL = import.meta.env.VITE_BACKEND_URL;
@@ -63,13 +70,179 @@ const CodingPracticePage = () => {
     { id: "c++", name: "C++", extension: "cpp" },
   ];
 
+  // Data structures and subtopics
+  const [dataStructures, setDataStructures] = useState([
+    {
+      id: 1,
+      name: "Arrays",
+      open: false,
+      subtopics: [
+        { id: 11, name: "Introduction to Arrays" },
+        { id: 12, name: "Array Operations" },
+        { id: 13, name: "Multi-dimensional Arrays" },
+        { id: 14, name: "Dynamic Arrays" },
+        { id: 15, name: "Array Problems & Patterns" },
+      ],
+    },
+    {
+      id: 2,
+      name: "Linked Lists",
+      open: false,
+      subtopics: [
+        { id: 21, name: "Singly Linked Lists" },
+        { id: 22, name: "Doubly Linked Lists" },
+        { id: 23, name: "Circular Linked Lists" },
+        { id: 24, name: "Linked List Operations" },
+        { id: 25, name: "Advanced Linked List Problems" },
+      ],
+    },
+    {
+      id: 3,
+      name: "Stacks",
+      open: false,
+      subtopics: [
+        { id: 31, name: "Introduction to Stacks" },
+        { id: 32, name: "Implementation (Array & Linked List)" },
+        { id: 33, name: "Applications of Stacks" },
+        { id: 34, name: "Stack Problems (Parentheses, Next Greater)" },
+      ],
+    },
+    {
+      id: 4,
+      name: "Queues",
+      open: false,
+      subtopics: [
+        { id: 41, name: "Introduction to Queues" },
+        { id: 42, name: "Circular Queue" },
+        { id: 43, name: "Deque (Double-Ended Queue)" },
+        { id: 44, name: "Priority Queue" },
+        { id: 45, name: "Queue Problems" },
+      ],
+    },
+    {
+      id: 5,
+      name: "Trees",
+      open: false,
+      subtopics: [
+        { id: 51, name: "Binary Trees" },
+        { id: 52, name: "Binary Search Trees (BST)" },
+        { id: 53, name: "Tree Traversals (DFS, BFS)" },
+        { id: 54, name: "Heaps" },
+        { id: 55, name: "Advanced Trees (AVL, Segment Tree, Trie)" },
+      ],
+    },
+    {
+      id: 6,
+      name: "Graphs",
+      open: false,
+      subtopics: [
+        { id: 61, name: "Graph Representation" },
+        { id: 62, name: "Graph Traversal (BFS, DFS)" },
+        { id: 63, name: "Shortest Path Algorithms" },
+        { id: 64, name: "Minimum Spanning Tree" },
+        { id: 65, name: "Topological Sort" },
+      ],
+    },
+    {
+      id: 7,
+      name: "Hash Tables",
+      open: false,
+      subtopics: [
+        { id: 71, name: "Hash Functions" },
+        { id: 72, name: "Collision Resolution" },
+        { id: 73, name: "Hash Table Operations" },
+        { id: 74, name: "Hash Table Applications" },
+      ],
+    },
+    {
+      id: 8,
+      name: "Sorting Algorithms",
+      open: false,
+      subtopics: [
+        { id: 81, name: "Bubble Sort" },
+        { id: 82, name: "Selection Sort" },
+        { id: 83, name: "Insertion Sort" },
+        { id: 84, name: "Merge Sort" },
+        { id: 85, name: "Quick Sort" },
+        { id: 86, name: "Heap Sort" },
+      ],
+    },
+    {
+      id: 9,
+      name: "Searching Algorithms",
+      open: false,
+      subtopics: [
+        { id: 91, name: "Linear Search" },
+        { id: 92, name: "Binary Search" },
+        { id: 93, name: "Depth-First Search" },
+        { id: 94, name: "Breadth-First Search" },
+      ],
+    },
+    {
+      id: 10,
+      name: "Dynamic Programming",
+      open: false,
+      subtopics: [
+        { id: 101, name: "Introduction to DP" },
+        { id: 102, name: "Memoization vs Tabulation" },
+        { id: 103, name: "Classic DP Problems" },
+        { id: 104, name: "Advanced DP Patterns" },
+      ],
+    },
+  ]);
+
+  // Filter data structures based on search query
+  const filteredDataStructures = dataStructures
+    .map((ds) => ({
+      ...ds,
+      subtopics: ds.subtopics.filter(
+        (subtopic) =>
+          subtopic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          ds.name.toLowerCase().includes(searchQuery.toLowerCase())
+      ),
+    }))
+    .filter((ds) => ds.subtopics.length > 0);
+
+  // Toggle dropdown for data structures
+  const toggleDropdown = (id) => {
+    setDataStructures(
+      dataStructures.map((ds) =>
+        ds.id === id ? { ...ds, open: !ds.open } : ds
+      )
+    );
+  };
+
+  // Handle topic selection
+  const handleTopicSelect = (topic, subtopic) => {
+    setDsTopic(topic);
+    setDsSubTopic(subtopic);
+    setShowTopicsDropdown(false);
+    if (isMobile) {
+      setIsSidebarOpen(false);
+    }
+  };
+
+  // Close topics dropdown when problems dropdown opens
+  useEffect(() => {
+    if (showProblemsDropdown) {
+      setShowTopicsDropdown(false);
+    }
+  }, [showProblemsDropdown]);
+
+  // Close problems dropdown when topics dropdown opens
+  useEffect(() => {
+    if (showTopicsDropdown) {
+      setShowProblemsDropdown(false);
+    }
+  }, [showTopicsDropdown]);
+
   // Check for mobile on mount and resize
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
       if (window.innerWidth < 768) {
         setIsSidebarOpen(false);
-        setEditorHeight(50); // Default to 50/50 split on mobile
+        setEditorHeight(50);
       }
     };
 
@@ -90,7 +263,6 @@ const CodingPracticePage = () => {
       const newHeight =
         ((e.clientY - containerRect.top) / containerRect.height) * 100;
 
-      // Limit between 20% and 80%
       const clampedHeight = Math.max(20, Math.min(80, newHeight));
       setEditorHeight(clampedHeight);
     };
@@ -129,7 +301,6 @@ const CodingPracticePage = () => {
       return;
     }
 
-    // Check authentication
     if (!isAuthenticated) {
       setError("Please log in to generate problems");
       return;
@@ -186,14 +357,14 @@ const CodingPracticePage = () => {
     }
   };
 
-  // Submit code for evaluation using the FastAPI endpoint
+  // Submit code for evaluation
   const submitCode = async () => {
     if (!selectedProblem) return;
-const token = getAuthToken();
-if (!token) {
-  setError("Authentication token not found. Please log in again.");
-  return;
-}
+    const token = getAuthToken();
+    if (!token) {
+      setError("Authentication token not found. Please log in again.");
+      return;
+    }
     setIsSubmitting(true);
     setIsResultsOpen(true);
     setTestResults(null);
@@ -232,14 +403,14 @@ if (!token) {
     }
   };
 
-  // Run test cases using the new /api/run-tests endpoint
+  // Run test cases
   const runTests = async () => {
     if (!selectedProblem) return;
-const token = getAuthToken();
-if (!token) {
-  setError("Authentication token not found. Please log in again.");
-  return;
-}
+    const token = getAuthToken();
+    if (!token) {
+      setError("Authentication token not found. Please log in again.");
+      return;
+    }
     setIsTesting(true);
     setIsResultsOpen(true);
     setTestResults(null);
@@ -281,6 +452,7 @@ if (!token) {
     setShowOptimalSolution(false);
     setTestResults(null);
     setError(null);
+    setShowProblemsDropdown(false);
     if (isMobile) {
       setIsSidebarOpen(false);
     }
@@ -310,7 +482,7 @@ if (!token) {
     return `solution.${lang?.extension || "py"}`;
   };
 
-  // Code editor component with white text only
+  // Code editor component
   const CodeEditor = ({ code, setCode, language }) => {
     const handleCodeChange = (e) => {
       setCode(e.target.value);
@@ -346,95 +518,157 @@ if (!token) {
     );
   };
 
-  // Render test case results from FastAPI response
+  // Render test case results with improved styling
   const renderTestCase = (testCase, index) => {
     return (
       <div
         key={index}
-        className={`p-3 rounded-lg border ${
+        className={`p-4 rounded-xl border-2 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${
           testCase.passed
-            ? "bg-green-900/10 border-green-800/30"
-            : "bg-red-900/10 border-red-800/30"
+            ? "bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/30 hover:border-green-500/50"
+            : "bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/30 hover:border-red-500/50"
         }`}
       >
-        <div className="flex items-center mb-2">
-          {testCase.passed ? (
-            <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-          ) : (
-            <XCircle className="w-4 h-4 text-red-500 mr-2" />
-          )}
-          <span className="text-sm font-medium">Test Case {index + 1}</span>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            {testCase.passed ? (
+              <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center mr-3">
+                <CheckCircle className="w-5 h-5 text-green-400" />
+              </div>
+            ) : (
+              <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center mr-3">
+                <XCircle className="w-5 h-5 text-red-400" />
+              </div>
+            )}
+            <div>
+              <span className="text-sm font-bold text-white">
+                Test Case {index + 1}
+              </span>
+              <div
+                className={`text-xs font-medium ${
+                  testCase.passed ? "text-green-400" : "text-red-400"
+                }`}
+              >
+                {testCase.passed ? "PASSED" : "FAILED"}
+              </div>
+            </div>
+          </div>
+          <div
+            className={`px-3 py-1 rounded-full text-xs font-bold ${
+              testCase.passed
+                ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                : "bg-red-500/20 text-red-400 border border-red-500/30"
+            }`}
+          >
+            {testCase.passed ? "✓" : "✗"}
+          </div>
         </div>
-        <div className="grid grid-cols-1 gap-2 text-xs">
-          <div>
-            <span className="text-gray-400">Input: </span>
-            <code className="bg-gray-800 px-1 rounded break-all text-white">
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+            <div className="flex items-center mb-2">
+              <div className="w-6 h-6 bg-blue-500/20 rounded flex items-center justify-center mr-2">
+                <span className="text-blue-400 text-xs">→</span>
+              </div>
+              <span className="text-gray-400 font-medium text-xs">INPUT</span>
+            </div>
+            <code className="text-white font-mono text-xs break-all bg-black/30 px-2 py-1 rounded">
               {testCase.input}
             </code>
           </div>
-          <div>
-            <span className="text-gray-400">Expected: </span>
-            <code className="bg-gray-800 px-1 rounded break-all text-white">
+
+          <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+            <div className="flex items-center mb-2">
+              <div className="w-6 h-6 bg-purple-500/20 rounded flex items-center justify-center mr-2">
+                <span className="text-purple-400 text-xs">✓</span>
+              </div>
+              <span className="text-gray-400 font-medium text-xs">
+                EXPECTED
+              </span>
+            </div>
+            <code className="text-white font-mono text-xs break-all bg-black/30 px-2 py-1 rounded">
               {testCase.expected_output}
             </code>
           </div>
-          <div>
-            <span className="text-gray-400">Output: </span>
-            <code className="bg-gray-800 px-1 rounded break-all text-white">
+
+          <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+            <div className="flex items-center mb-2">
+              <div className="w-6 h-6 bg-orange-500/20 rounded flex items-center justify-center mr-2">
+                <span className="text-orange-400 text-xs">→</span>
+              </div>
+              <span className="text-gray-400 font-medium text-xs">OUTPUT</span>
+            </div>
+            <code
+              className={`font-mono text-xs break-all px-2 py-1 rounded ${
+                testCase.passed
+                  ? "text-green-400 bg-green-500/10"
+                  : "text-red-400 bg-red-500/10"
+              }`}
+            >
               {testCase.actual_output}
             </code>
-          </div>
-          <div>
-            <span className="text-gray-400">Result: </span>
-            <span
-              className={testCase.passed ? "text-green-500" : "text-red-500"}
-            >
-              {testCase.passed ? "Passed" : "Failed"}
-            </span>
           </div>
         </div>
       </div>
     );
   };
 
-  // Render efficiency analysis from FastAPI response
+  // Render efficiency analysis
   const renderEfficiencyAnalysis = (efficiency) => {
     if (!efficiency) return null;
 
     return (
-      <div className="mt-4 p-4 bg-gray-800/30 rounded-lg">
-        <h4 className="font-medium mb-3 text-white">Efficiency Analysis</h4>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-gray-400">Your Time Complexity:</span>
-            <div className="text-white font-mono">
-              {efficiency.time_complexity}
+      <div className="mt-6 p-5 bg-gradient-to-br from-blue-500/10 to-purple-500/5 rounded-xl border border-blue-500/20">
+        <h4 className="font-bold text-lg mb-4 flex items-center text-white">
+          <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center mr-3">
+            <Zap className="w-4 h-4 text-blue-400" />
+          </div>
+          Efficiency Analysis
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="bg-black/30 rounded-lg p-4 border border-gray-700/50">
+              <div className="text-sm text-gray-400 mb-2">
+                Your Time Complexity
+              </div>
+              <div className="text-white font-mono text-lg font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                {efficiency.time_complexity}
+              </div>
+            </div>
+            <div className="bg-black/30 rounded-lg p-4 border border-gray-700/50">
+              <div className="text-sm text-gray-400 mb-2">
+                Optimal Time Complexity
+              </div>
+              <div className="text-white font-mono text-lg font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
+                {efficiency.optimal_time_complexity}
+              </div>
             </div>
           </div>
-          <div>
-            <span className="text-gray-400">Optimal Time Complexity:</span>
-            <div className="text-white font-mono">
-              {efficiency.optimal_time_complexity}
+          <div className="space-y-4">
+            <div className="bg-black/30 rounded-lg p-4 border border-gray-700/50">
+              <div className="text-sm text-gray-400 mb-2">
+                Your Space Complexity
+              </div>
+              <div className="text-white font-mono text-lg font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+                {efficiency.space_complexity}
+              </div>
             </div>
-          </div>
-          <div>
-            <span className="text-gray-400">Your Space Complexity:</span>
-            <div className="text-white font-mono">
-              {efficiency.space_complexity}
-            </div>
-          </div>
-          <div>
-            <span className="text-gray-400">Optimal Space Complexity:</span>
-            <div className="text-white font-mono">
-              {efficiency.optimal_space_complexity}
+            <div className="bg-black/30 rounded-lg p-4 border border-gray-700/50">
+              <div className="text-sm text-gray-400 mb-2">
+                Optimal Space Complexity
+              </div>
+              <div className="text-white font-mono text-lg font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
+                {efficiency.optimal_space_complexity}
+              </div>
             </div>
           </div>
         </div>
         {efficiency.comparison && (
-          <div className="mt-3 p-3 bg-blue-900/20 rounded">
-            <span className="text-blue-300 text-sm">
+          <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+            <div className="flex items-center text-blue-300 text-sm">
+              <Lightbulb className="w-4 h-4 mr-2" />
               {efficiency.comparison}
-            </span>
+            </div>
           </div>
         )}
       </div>
@@ -490,14 +724,26 @@ if (!token) {
                   <ChevronLeft className="w-4 h-4" />
                 </button>
               </div>
+
+              {/* Search Bar */}
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search topics..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-gray-950 border  rounded-lg text-sm focus:outline-none focus:border-gray-900 text-white"
+                />
+              </div>
             </div>
           )}
 
           <div className="flex-1 overflow-y-auto custom-scrollbar">
-            <div className="p-4">
+            <div className="p-4 space-y-4">
               {/* Authentication Warning */}
               {!isAuthenticated && (
-                <div className="mb-4 bg-yellow-900/20 border border-yellow-800/50 p-3 rounded-xl">
+                <div className="bg-yellow-900/20 border border-yellow-800/50 p-3 rounded-xl">
                   <div className="flex items-center text-yellow-300">
                     <Star className="w-4 h-4 mr-2" />
                     <span className="font-medium text-sm">
@@ -513,7 +759,7 @@ if (!token) {
 
               {/* Error Display */}
               {error && (
-                <div className="mb-4 p-3 bg-red-900/20 border border-red-800/50 rounded-lg">
+                <div className="bg-red-900/20 border border-red-800/50 p-3 rounded-lg">
                   <div className="flex items-center text-red-300">
                     <AlertCircle className="w-4 h-4 mr-2" />
                     <span className="text-sm">{error}</span>
@@ -521,115 +767,186 @@ if (!token) {
                 </div>
               )}
 
-              {/* Topic Input */}
-              <div className="space-y-3 mb-6">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Data Structure
-                  </label>
-                  <input
-                    type="text"
-                    value={dsTopic}
-                    onChange={(e) => setDsTopic(e.target.value)}
-                    placeholder="e.g., Arrays, Linked Lists, Trees"
-                    className="w-full p-2 bg-gray-950 border border-gray-800 rounded text-sm focus:outline-none focus:border-orange-500 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Topic
-                  </label>
-                  <input
-                    type="text"
-                    value={dsSubTopic}
-                    onChange={(e) => setDsSubTopic(e.target.value)}
-                    placeholder="e.g., Traversal, Sorting, Search"
-                    className="w-full p-2 bg-gray-950 border border-gray-800 rounded text-sm focus:outline-none focus:border-orange-500 text-white"
-                  />
-                </div>
-                <button
-                  onClick={generateProblems}
-                  disabled={isGenerating || !isAuthenticated}
-                  className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-400 text-white font-medium py-2 px-4 rounded transition-colors flex items-center justify-center relative overflow-hidden group"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                  {isGenerating ? (
-                    <>
-                      <div className="relative z-10 flex items-center">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                        <span>Generating...</span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-1 relative z-10" />
-                      <span className="relative z-10">
-                        {isAuthenticated
-                          ? "Generate Problems"
-                          : "Please Log In"}
-                      </span>
-                    </>
-                  )}
-                </button>
+              {/* Selected Topics Display */}
+              {/* Data Structure Input */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2 text-white">
+                  Data Structure
+                </label>
+                <input
+                  type="text"
+                  value={dsTopic}
+                  onChange={(e) => setDsTopic(e.target.value)}
+                  placeholder="e.g., Arrays, Linked Lists, Trees"
+                  className="w-full p-3 bg-gray-950 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-orange-500 text-white"
+                />
               </div>
 
-              {/* Problems List */}
+              {/* Subtopic Input */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2 text-white">
+                  Subtopic
+                </label>
+                <input
+                  type="text"
+                  value={dsSubTopic}
+                  onChange={(e) => setDsSubTopic(e.target.value)}
+                  placeholder="e.g., Introduction, Operations, Traversal"
+                  className="w-full p-3 bg-gray-950 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-orange-500 text-white"
+                />
+              </div>
+              {/* Topics Dropdown */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-medium">Problems</h3>
-                  <span className="text-xs text-gray-400">
-                    {problems.length} problems
+                <button
+                  className="w-full text-left p-3 rounded-lg flex items-center justify-between hover:bg-gray-800/50 transition-colors border border-gray-700 bg-gray-950"
+                  onClick={() => {
+                    setShowTopicsDropdown(!showTopicsDropdown);
+                    if (!showTopicsDropdown) setShowProblemsDropdown(false);
+                  }}
+                >
+                  <span className="font-medium text-sm text-white">
+                    Select Data Structure & Topic
                   </span>
-                </div>
+                  {showTopicsDropdown ? (
+                    <ChevronUp className="w-4 h-4 text-gray-400" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  )}
+                </button>
 
-                {problems.length === 0 ? (
-                  <div className="text-center text-gray-500 py-8">
-                    <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">
-                      {isAuthenticated
-                        ? "Enter a topic to generate problems"
-                        : "Log in to generate problems"}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {problems.map((problem) => (
-                      <div
-                        key={problem.id}
-                        className={`p-3 rounded-lg cursor-pointer transition-colors border ${
-                          selectedProblem?.id === problem.id
-                            ? "bg-orange-500/20 border-orange-500/30"
-                            : "hover:bg-gray-800/50 border-gray-800"
-                        }`}
-                        onClick={() => handleProblemSelect(problem)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-white">
-                            {problem.title}
-                          </span>
-                          {testResults?.passed &&
-                            selectedProblem?.id === problem.id && (
-                              <CheckCircle className="w-4 h-4 text-green-500" />
-                            )}
-                        </div>
-                        <div className="flex items-center mt-2">
-                          <span
-                            className={`text-xs px-2 py-1 rounded-full ${
-                              problem.difficulty === "easy"
-                                ? "bg-green-500/20 text-green-400"
-                                : problem.difficulty === "medium"
-                                ? "bg-yellow-500/20 text-yellow-400"
-                                : "bg-red-500/20 text-red-400"
-                            }`}
+                {showTopicsDropdown && (
+                  <div className="mt-2 max-h-60 overflow-y-auto border border-gray-700 rounded-lg bg-gray-950">
+                    <div className="p-2">
+                      {filteredDataStructures.map((ds) => (
+                        <div key={ds.id} className="mb-2">
+                          <button
+                            className="w-full text-left p-2 rounded-lg flex items-center justify-between hover:bg-gray-800/50 transition-colors"
+                            onClick={() => toggleDropdown(ds.id)}
                           >
-                            {problem.difficulty}
-                          </span>
+                            <span className="font-medium text-sm text-white">
+                              {ds.name}
+                            </span>
+                            {ds.open ? (
+                              <ChevronDown className="w-4 h-4 text-gray-400" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 text-gray-400" />
+                            )}
+                          </button>
+                          {ds.open && (
+                            <div className="ml-3 pl-2 border-l border-gray-700 mt-1">
+                              {ds.subtopics.map((subtopic) => (
+                                <button
+                                  key={subtopic.id}
+                                  className={`w-full text-left p-2 rounded-lg transition-colors text-xs mb-1 ${
+                                    dsSubTopic === subtopic.name &&
+                                    dsTopic === ds.name
+                                      ? "bg-orange-500/20 text-orange-500 border border-orange-500/30"
+                                      : "hover:bg-gray-800/30 text-gray-300 border border-transparent"
+                                  }`}
+                                  onClick={() =>
+                                    handleTopicSelect(ds.name, subtopic.name)
+                                  }
+                                >
+                                  {subtopic.name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
+
+              {/* Generate Problems Button */}
+              <button
+                onClick={generateProblems}
+                disabled={
+                  isGenerating || !isAuthenticated || !dsTopic || !dsSubTopic
+                }
+                className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center relative overflow-hidden group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                {isGenerating ? (
+                  <>
+                    <div className="relative z-10 flex items-center">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      <span>Generating...</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-1 relative z-10" />
+                    <span className="relative z-10">
+                      {isAuthenticated ? "Generate Problems" : "Please Log In"}
+                    </span>
+                  </>
+                )}
+              </button>
+
+              {/* Problems Dropdown */}
+              {problems.length > 0 && (
+                <div>
+                  <button
+                    className="w-full text-left p-3 rounded-lg flex items-center justify-between hover:bg-gray-800/50 transition-colors border border-gray-700 bg-gray-950"
+                    onClick={() => {
+                      setShowProblemsDropdown(!showProblemsDropdown);
+                      if (!showProblemsDropdown) setShowTopicsDropdown(false);
+                    }}
+                  >
+                    <span className="font-medium text-sm text-white">
+                      Generated Problems ({problems.length})
+                    </span>
+                    {showProblemsDropdown ? (
+                      <ChevronUp className="w-4 h-4 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    )}
+                  </button>
+
+                  {showProblemsDropdown && (
+                    <div className="mt-2 border border-gray-700 rounded-lg bg-gray-950">
+                      <div className="p-2 space-y-2">
+                        {problems.map((problem) => (
+                          <div
+                            key={problem.id}
+                            className={`p-3 rounded-lg cursor-pointer transition-colors border ${
+                              selectedProblem?.id === problem.id
+                                ? "bg-gray-950 border-orange-500/30"
+                                : "hover:bg-gray-800/50 border-gray-800"
+                            }`}
+                            onClick={() => handleProblemSelect(problem)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-white">
+                                {problem.title}
+                              </span>
+                              {testResults?.passed &&
+                                selectedProblem?.id === problem.id && (
+                                  <CheckCircle className="w-4 h-4 text-green-500" />
+                                )}
+                            </div>
+                            <div className="flex items-center mt-2">
+                              <span
+                                className={`text-xs px-2 py-1 rounded-full ${
+                                  problem.difficulty === "easy"
+                                    ? "bg-green-500/20 text-green-400"
+                                    : problem.difficulty === "medium"
+                                    ? "bg-yellow-500/20 text-yellow-400"
+                                    : "bg-red-500/20 text-red-400"
+                                }`}
+                              >
+                                {problem.difficulty}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -848,6 +1165,17 @@ if (!token) {
                     language={language}
                   />
                 </div>
+
+                {/* Resize Handle - Moved above buttons */}
+                <div
+                  className="relative group cursor-row-resize bg-gray-800 hover:bg-gray-700 transition-colors flex items-center justify-center"
+                  style={{ height: "8px" }}
+                  onMouseDown={() => setIsResizing(true)}
+                >
+                  <GripVertical className="w-4 h-4 text-gray-500 group-hover:text-gray-300" />
+                </div>
+
+                {/* Buttons */}
                 <div className="p-4 border-t border-gray-800 flex items-center justify-between flex-wrap gap-2 flex-shrink-0">
                   <div className="flex items-center space-x-2">
                     <button
@@ -910,15 +1238,6 @@ if (!token) {
                 </div>
               </div>
 
-              {/* Resize Handle */}
-              <div
-                className="relative group cursor-row-resize bg-gray-800 hover:bg-gray-700 transition-colors flex items-center justify-center"
-                style={{ height: "8px" }}
-                onMouseDown={() => setIsResizing(true)}
-              >
-                <GripVertical className="w-4 h-4 text-gray-500 group-hover:text-gray-300" />
-              </div>
-
               {/* Test Results Panel */}
               <div
                 className="overflow-y-auto custom-scrollbar bg-black"
@@ -931,87 +1250,245 @@ if (!token) {
                 {testResults ? (
                   <div className="p-4">
                     {testResults.passed ? (
-                      <div className="bg-green-900/20 border border-green-800/50 p-4 rounded-lg mb-4">
+                      <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-2 border-green-500/30 p-4 rounded-xl mb-6">
                         <div className="flex items-center text-green-300">
-                          <CheckCircle className="w-5 h-5 mr-2" />
-                          <span className="font-medium">
-                            All test cases passed!
-                          </span>
-                        </div>
-                        <div className="mt-2 text-sm text-green-300">
-                          Your solution was accepted!
+                          <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center mr-3">
+                            <CheckCircle className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-lg">
+                              All test cases passed!
+                            </span>
+                            <div className="text-green-400 text-sm">
+                              Your solution was accepted!
+                            </div>
+                          </div>
                         </div>
                         <button
-                          className="mt-3 bg-green-800 hover:bg-green-700 text-white text-sm py-1 px-3 rounded flex items-center"
+                          className="mt-3 bg-green-600 hover:bg-green-700 text-white text-sm py-2 px-4 rounded-lg flex items-center transition-colors"
                           onClick={() =>
                             setShowOptimalSolution(!showOptimalSolution)
                           }
                         >
-                          <Lightbulb className="w-4 h-4 mr-1" />
+                          <Lightbulb className="w-4 h-4 mr-2" />
                           {showOptimalSolution ? "Hide" : "View"} Optimal
                           Solution
                         </button>
                       </div>
                     ) : (
-                      <div className="bg-red-900/20 border border-red-800/50 p-4 rounded-lg mb-4">
+                      <div className="bg-black border-2 border-red-500/30 p-4 rounded-xl mb-6">
                         <div className="flex items-center text-red-300">
-                          <XCircle className="w-5 h-5 mr-2" />
-                          <span className="font-medium">
-                            {testResults.errors?.length > 0
-                              ? "Solution Failed"
-                              : "Some test cases failed"}
-                          </span>
+                          <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center mr-3">
+                            <XCircle className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-lg">
+                              {testResults.errors?.length > 0
+                                ? "Solution Failed"
+                                : "Some test cases failed"}
+                            </span>
+                          </div>
                         </div>
                         {testResults.errors?.map((error, idx) => (
-                          <div key={idx} className="mt-2 text-sm text-red-300">
-                            <span className="font-medium">{error.type}:</span>{" "}
-                            {error.message}
+                          <div
+                            key={idx}
+                            className="mt-3 p-3 bg-black rounded-lg border border-red-500/20"
+                          >
+                            <span className="font-medium text-red-400">
+                              {error.type}:
+                            </span>{" "}
+                            <span className="text-white">{error.message}</span>
                           </div>
                         ))}
                       </div>
                     )}
 
                     {testResults.test_cases && (
-                      <div className="mb-4">
-                        <h4 className="font-medium mb-2 text-white">
-                          Test Cases (
-                          {
-                            testResults.test_cases.filter((tc) => tc.passed)
-                              .length
-                          }
-                          /{testResults.test_cases.length} passed)
-                        </h4>
-                        <div className="space-y-2 max-h-40 overflow-y-auto">
-                          {testResults.test_cases.map((testCase, idx) =>
-                            renderTestCase(testCase, idx)
-                          )}
+                      <div className="mb-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="font-bold text-lg flex items-center text-white">
+                            <FileText className="w-5 h-5 mr-2 text-blue-400" />
+                            Test Cases
+                          </h4>
+                          <div className="text-sm text-gray-400">
+                            {
+                              testResults.test_cases.filter((tc) => tc.passed)
+                                .length
+                            }
+                            /{testResults.test_cases.length} passed
+                          </div>
+                        </div>
+
+                        {/* Test Cases List - LeetCode Style */}
+                        <div className="space-y-3">
+                          {testResults.test_cases.map((testCase, idx) => (
+                            <div
+                              key={idx}
+                              className={`border rounded-lg p-4 transition-all duration-200 ${
+                                testCase.passed
+                                  ? "border-green-500/30 bg-black"
+                                  : "border-red-500/30 bg-red-500/5"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center">
+                                  {testCase.passed ? (
+                                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                                  ) : (
+                                    <XCircle className="w-5 h-5 text-red-500 mr-2" />
+                                  )}
+                                  <span className="font-medium text-white">
+                                    Test Case {idx + 1}
+                                  </span>
+                                </div>
+                                <span
+                                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                    testCase.passed
+                                      ? "bg-black text-green-400"
+                                      : "bg-red-500/20 text-red-400"
+                                  }`}
+                                >
+                                  {testCase.passed ? "Passed" : "Failed"}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                {/* Input Section */}
+                                <div>
+                                  <div className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wide">
+                                    Input
+                                  </div>
+                                  <div className="bg-gray-900 rounded p-3 font-mono text-white text-sm">
+                                    {testCase.input}
+                                  </div>
+                                </div>
+
+                                {/* Expected Output Section */}
+                                <div>
+                                  <div className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wide">
+                                    Expected Output
+                                  </div>
+                                  <div className="bg-gray-900 rounded p-3 font-mono text-white text-sm">
+                                    {testCase.expected_output}
+                                  </div>
+                                </div>
+
+                                {/* Your Output Section */}
+                                <div className="md:col-span-2">
+                                  <div className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wide">
+                                    Your Output
+                                  </div>
+                                  <div
+                                    className={`rounded p-3 font-mono text-sm ${
+                                      testCase.passed
+                                        ? "bg-green-500/10 text-green-400 border border-green-500/20"
+                                        : "bg-red-500/10 text-red-400 border border-red-500/20"
+                                    }`}
+                                  >
+                                    {testCase.user_output}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
 
                     {/* Efficiency Analysis */}
-                    {testResults.efficiency &&
-                      renderEfficiencyAnalysis(testResults.efficiency)}
+                    {testResults.efficiency && (
+                      <div className="mb-6">
+                        <h4 className="font-bold text-lg mb-4 flex items-center text-white">
+                          <TrendingUp className="w-5 h-5 mr-2 text-purple-400" />
+                          Efficiency Analysis
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Time Complexity */}
+                          <div className="bg-gray-950 rounded-xl p-4 border border-gray-700">
+                            <div className="text-white text-sm font-medium mb-3">
+                              Time Complexity
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <div className="text-white text-xs mb-1">
+                                  Your Solution
+                                </div>
+                                <div className="text-white font-mono text-sm bg-blue-500/10 px-3 py-2 rounded border border-blue-500/20">
+                                  {testResults.efficiency.time_complexity}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-white text-xs mb-1">
+                                  Optimal
+                                </div>
+                                <div className="text-green-400 font-mono text-sm bg-green-500/10 px-3 py-2 rounded border border-green-500/20">
+                                  {
+                                    testResults.efficiency
+                                      .optimal_time_complexity
+                                  }
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Space Complexity */}
+                          <div className="bg-gray-950 rounded-xl p-4 border border-gray-700">
+                            <div className="text-white text-sm font-medium mb-3">
+                              Space Complexity
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <div className="text-white text-xs mb-1">
+                                  Your Solution
+                                </div>
+                                <div className="text-white font-mono text-sm bg-blue-500/10 px-3 py-2 rounded border border-blue-500/20">
+                                  {testResults.efficiency.space_complexity}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-white text-xs mb-1">
+                                  Optimal
+                                </div>
+                                <div className="text-green-400 font-mono text-sm bg-green-500/10 px-3 py-2 rounded border border-green-500/20">
+                                  {
+                                    testResults.efficiency
+                                      .optimal_space_complexity
+                                  }
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {testResults.efficiency.comparison && (
+                          <div className="mt-4 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                            <div className="text-blue-300 text-sm">
+                              {testResults.efficiency.comparison}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {testResults.passed &&
                       showOptimalSolution &&
                       selectedProblem?.optimal_solution && (
-                        <div className="mt-4">
-                          <h4 className="font-medium mb-2 flex items-center text-white">
-                            <Lightbulb className="w-4 h-4 mr-2 text-yellow-500" />
+                        <div className="mt-6">
+                          <h4 className="font-bold text-lg mb-4 flex items-center text-white">
+                            <Lightbulb className="w-5 h-5 mr-2 text-yellow-400" />
                             Optimal Solution
                           </h4>
-                          <div className="bg-gray-800/50 p-4 rounded-lg mb-3 overflow-x-auto">
-                            <pre className="text-sm font-mono whitespace-pre-wrap text-white">
+                          <div className="bg-gray-950 rounded-xl p-4 border border-gray-700 mb-4">
+                            <pre className="text-sm font-mono whitespace-pre-wrap text-white overflow-x-auto">
                               {selectedProblem.optimal_solution}
                             </pre>
                           </div>
                           {selectedProblem.optimal_explanation && (
-                            <div className="bg-blue-900/20 border border-blue-800/50 p-3 rounded-lg">
-                              <h5 className="font-medium text-blue-300 mb-1">
+                            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+                              <h5 className="font-bold text-blue-300 mb-2 text-sm">
                                 Explanation
                               </h5>
-                              <p className="text-sm text-blue-300">
+                              <p className="text-blue-300 text-sm">
                                 {selectedProblem.optimal_explanation}
                               </p>
                             </div>
@@ -1020,10 +1497,15 @@ if (!token) {
                       )}
                   </div>
                 ) : (
-                  <div className="p-4 text-center text-gray-500 h-full flex items-center justify-center">
+                  <div className="p-8 text-center text-gray-500 h-full flex items-center justify-center">
                     <div>
-                      <Clock className="w-8 h-8 mx-auto mb-2" />
-                      <p>Run your code to see test results</p>
+                      <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Clock className="w-8 h-8" />
+                      </div>
+                      <p className="text-lg font-medium mb-2">No Results Yet</p>
+                      <p className="text-sm">
+                        Run your code to see test results
+                      </p>
                     </div>
                   </div>
                 )}

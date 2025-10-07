@@ -46,7 +46,7 @@ def checker_agent(problem:Problem,user_code:str,language:str)->dict:
       {{
       "type":"ErrorType",
       "test_case":1,
-      "message":"Error Description
+      "message":"Error Description and on next line Solution : What changes are needed to make in code
       }}
       ],
       "efficiency":{{
