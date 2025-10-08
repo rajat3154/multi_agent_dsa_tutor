@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import {
   ChevronRight,
   ChevronLeft,
@@ -29,6 +29,7 @@ import {
   GripVertical,
   Zap,
   TrendingUp,
+  HelpCircle,
 } from "lucide-react";
 import Navbar from "@/shared/Navbar";
 import { UserContext } from "@/contexts/UserContext";
@@ -51,11 +52,19 @@ const CodingPracticePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [showHint, setShowHint] = useState(false);
 
-  // New states for dropdowns
-  const [showTopicsDropdown, setShowTopicsDropdown] = useState(false);
-  const [showProblemsDropdown, setShowProblemsDropdown] = useState(false);
+  // New states for dropdown suggestions
+  const [showTopicSuggestions, setShowTopicSuggestions] = useState(false);
+  const [showSubTopicSuggestions, setShowSubTopicSuggestions] = useState(false);
+  const [filteredTopics, setFilteredTopics] = useState([]);
+  const [filteredSubTopics, setFilteredSubTopics] = useState([]);
+
+  // Refs for click outside detection
+  const topicInputRef = useRef(null);
+  const subTopicInputRef = useRef(null);
+  const topicSuggestionsRef = useRef(null);
+  const subTopicSuggestionsRef = useRef(null);
 
   // Adjustable panel heights
   const [editorHeight, setEditorHeight] = useState(60);
@@ -71,11 +80,10 @@ const CodingPracticePage = () => {
   ];
 
   // Data structures and subtopics
-  const [dataStructures, setDataStructures] = useState([
+  const dataStructures = [
     {
       id: 1,
       name: "Arrays",
-      open: false,
       subtopics: [
         { id: 11, name: "Introduction to Arrays" },
         { id: 12, name: "Array Operations" },
@@ -87,7 +95,6 @@ const CodingPracticePage = () => {
     {
       id: 2,
       name: "Linked Lists",
-      open: false,
       subtopics: [
         { id: 21, name: "Singly Linked Lists" },
         { id: 22, name: "Doubly Linked Lists" },
@@ -99,7 +106,6 @@ const CodingPracticePage = () => {
     {
       id: 3,
       name: "Stacks",
-      open: false,
       subtopics: [
         { id: 31, name: "Introduction to Stacks" },
         { id: 32, name: "Implementation (Array & Linked List)" },
@@ -110,7 +116,6 @@ const CodingPracticePage = () => {
     {
       id: 4,
       name: "Queues",
-      open: false,
       subtopics: [
         { id: 41, name: "Introduction to Queues" },
         { id: 42, name: "Circular Queue" },
@@ -122,7 +127,6 @@ const CodingPracticePage = () => {
     {
       id: 5,
       name: "Trees",
-      open: false,
       subtopics: [
         { id: 51, name: "Binary Trees" },
         { id: 52, name: "Binary Search Trees (BST)" },
@@ -134,7 +138,6 @@ const CodingPracticePage = () => {
     {
       id: 6,
       name: "Graphs",
-      open: false,
       subtopics: [
         { id: 61, name: "Graph Representation" },
         { id: 62, name: "Graph Traversal (BFS, DFS)" },
@@ -146,7 +149,6 @@ const CodingPracticePage = () => {
     {
       id: 7,
       name: "Hash Tables",
-      open: false,
       subtopics: [
         { id: 71, name: "Hash Functions" },
         { id: 72, name: "Collision Resolution" },
@@ -157,7 +159,6 @@ const CodingPracticePage = () => {
     {
       id: 8,
       name: "Sorting Algorithms",
-      open: false,
       subtopics: [
         { id: 81, name: "Bubble Sort" },
         { id: 82, name: "Selection Sort" },
@@ -170,7 +171,6 @@ const CodingPracticePage = () => {
     {
       id: 9,
       name: "Searching Algorithms",
-      open: false,
       subtopics: [
         { id: 91, name: "Linear Search" },
         { id: 92, name: "Binary Search" },
@@ -181,7 +181,6 @@ const CodingPracticePage = () => {
     {
       id: 10,
       name: "Dynamic Programming",
-      open: false,
       subtopics: [
         { id: 101, name: "Introduction to DP" },
         { id: 102, name: "Memoization vs Tabulation" },
@@ -189,52 +188,101 @@ const CodingPracticePage = () => {
         { id: 104, name: "Advanced DP Patterns" },
       ],
     },
-  ]);
+  ];
 
-  // Filter data structures based on search query
-  const filteredDataStructures = dataStructures
-    .map((ds) => ({
-      ...ds,
-      subtopics: ds.subtopics.filter(
-        (subtopic) =>
-          subtopic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          ds.name.toLowerCase().includes(searchQuery.toLowerCase())
-      ),
-    }))
-    .filter((ds) => ds.subtopics.length > 0);
+  // Get all unique topics for suggestions
+  const allTopics = dataStructures.map((ds) => ds.name);
 
-  // Toggle dropdown for data structures
-  const toggleDropdown = (id) => {
-    setDataStructures(
-      dataStructures.map((ds) =>
-        ds.id === id ? { ...ds, open: !ds.open } : ds
-      )
-    );
+  // Get all subtopics for a specific topic
+  const getSubTopicsForTopic = (topicName) => {
+    const topic = dataStructures.find((ds) => ds.name === topicName);
+    return topic ? topic.subtopics.map((st) => st.name) : [];
   };
 
-  // Handle topic selection
-  const handleTopicSelect = (topic, subtopic) => {
+  // Filter topics based on input
+  useEffect(() => {
+    if (dsTopic.trim()) {
+      const filtered = allTopics.filter((topic) =>
+        topic.toLowerCase().includes(dsTopic.toLowerCase())
+      );
+      setFilteredTopics(filtered);
+    } else {
+      setFilteredTopics(allTopics);
+    }
+  }, [dsTopic]);
+
+  // Filter subtopics based on input and selected topic
+  useEffect(() => {
+    if (dsTopic) {
+      const allSubTopics = getSubTopicsForTopic(dsTopic);
+      if (dsSubTopic.trim()) {
+        const filtered = allSubTopics.filter((subtopic) =>
+          subtopic.toLowerCase().includes(dsSubTopic.toLowerCase())
+        );
+        setFilteredSubTopics(filtered);
+      } else {
+        setFilteredSubTopics(allSubTopics);
+      }
+    } else {
+      setFilteredSubTopics([]);
+    }
+  }, [dsSubTopic, dsTopic]);
+
+  // Handle topic selection from suggestions
+  const handleTopicSelect = (topic) => {
     setDsTopic(topic);
-    setDsSubTopic(subtopic);
-    setShowTopicsDropdown(false);
-    if (isMobile) {
-      setIsSidebarOpen(false);
-    }
+    setShowTopicSuggestions(false);
+    // Clear subtopic when topic changes
+    setDsSubTopic("");
+    // Focus on subtopic input after selecting topic
+    setTimeout(() => {
+      subTopicInputRef.current?.focus();
+    }, 100);
   };
 
-  // Close topics dropdown when problems dropdown opens
-  useEffect(() => {
-    if (showProblemsDropdown) {
-      setShowTopicsDropdown(false);
-    }
-  }, [showProblemsDropdown]);
+  // Handle subtopic selection from suggestions
+  const handleSubTopicSelect = (subtopic) => {
+    setDsSubTopic(subtopic);
+    setShowSubTopicSuggestions(false);
+  };
 
-  // Close problems dropdown when topics dropdown opens
+  // Handle click outside to close dropdowns
   useEffect(() => {
-    if (showTopicsDropdown) {
-      setShowProblemsDropdown(false);
+    const handleClickOutside = (event) => {
+      // Close topic suggestions if click is outside
+      if (
+        topicInputRef.current &&
+        !topicInputRef.current.contains(event.target) &&
+        topicSuggestionsRef.current &&
+        !topicSuggestionsRef.current.contains(event.target)
+      ) {
+        setShowTopicSuggestions(false);
+      }
+
+      // Close subtopic suggestions if click is outside
+      if (
+        subTopicInputRef.current &&
+        !subTopicInputRef.current.contains(event.target) &&
+        subTopicSuggestionsRef.current &&
+        !subTopicSuggestionsRef.current.contains(event.target)
+      ) {
+        setShowSubTopicSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Close subtopic suggestions when topic is cleared
+  useEffect(() => {
+    if (!dsTopic) {
+      setShowSubTopicSuggestions(false);
+      setDsSubTopic("");
     }
-  }, [showTopicsDropdown]);
+  }, [dsTopic]);
 
   // Check for mobile on mount and resize
   useEffect(() => {
@@ -318,6 +366,7 @@ const CodingPracticePage = () => {
     setSelectedProblem(null);
     setTestResults(null);
     setShowOptimalSolution(false);
+    setShowHint(false);
 
     try {
       const response = await fetch(`${API_URL}/api/generate-problems`, {
@@ -369,6 +418,7 @@ const CodingPracticePage = () => {
     setIsResultsOpen(true);
     setTestResults(null);
     setError(null);
+    setShowHint(false);
 
     try {
       const response = await fetch(`${API_URL}/api/evaluate-solution`, {
@@ -415,6 +465,7 @@ const CodingPracticePage = () => {
     setIsResultsOpen(true);
     setTestResults(null);
     setError(null);
+    setShowHint(false); // Always reset hint visibility on new test run
 
     try {
       const response = await fetch(`${API_URL}/api/run-tests`, {
@@ -437,6 +488,8 @@ const CodingPracticePage = () => {
 
       const data = await response.json();
       setTestResults(data);
+
+      // Don't automatically show hint - user must click the hint button
     } catch (err) {
       setError(err.message);
       console.error("Error running tests:", err);
@@ -452,7 +505,7 @@ const CodingPracticePage = () => {
     setShowOptimalSolution(false);
     setTestResults(null);
     setError(null);
-    setShowProblemsDropdown(false);
+    setShowHint(false);
     if (isMobile) {
       setIsSidebarOpen(false);
     }
@@ -518,159 +571,46 @@ const CodingPracticePage = () => {
     );
   };
 
-  // Render test case results with improved styling
-  const renderTestCase = (testCase, index) => {
+  // Render hint section
+  const renderHint = () => {
+    if (!testResults?.hint || !showHint) return null;
+
     return (
-      <div
-        key={index}
-        className={`p-4 rounded-xl border-2 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${
-          testCase.passed
-            ? "bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/30 hover:border-green-500/50"
-            : "bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/30 hover:border-red-500/50"
-        }`}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
-            {testCase.passed ? (
-              <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center mr-3">
-                <CheckCircle className="w-5 h-5 text-green-400" />
+      <div className="mb-6">
+        <div className="bg-black border-2 border-blue-500/30 p-4 rounded-xl">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center text-blue-300">
+              <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center mr-3">
+                <HelpCircle className="w-5 h-5" />
               </div>
-            ) : (
-              <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center mr-3">
-                <XCircle className="w-5 h-5 text-red-400" />
-              </div>
-            )}
-            <div>
-              <span className="text-sm font-bold text-white">
-                Test Case {index + 1}
-              </span>
-              <div
-                className={`text-xs font-medium ${
-                  testCase.passed ? "text-green-400" : "text-red-400"
-                }`}
-              >
-                {testCase.passed ? "PASSED" : "FAILED"}
+              <div>
+                <span className="font-bold text-lg">Need a Hint?</span>
+                <div className="text-blue-400 text-sm">
+                  Here's some guidance to help you debug
+                </div>
               </div>
             </div>
-          </div>
-          <div
-            className={`px-3 py-1 rounded-full text-xs font-bold ${
-              testCase.passed
-                ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                : "bg-red-500/20 text-red-400 border border-red-500/30"
-            }`}
-          >
-            {testCase.passed ? "✓" : "✗"}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-          <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
-            <div className="flex items-center mb-2">
-              <div className="w-6 h-6 bg-blue-500/20 rounded flex items-center justify-center mr-2">
-                <span className="text-blue-400 text-xs">→</span>
-              </div>
-              <span className="text-gray-400 font-medium text-xs">INPUT</span>
-            </div>
-            <code className="text-white font-mono text-xs break-all bg-black/30 px-2 py-1 rounded">
-              {testCase.input}
-            </code>
-          </div>
-
-          <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
-            <div className="flex items-center mb-2">
-              <div className="w-6 h-6 bg-purple-500/20 rounded flex items-center justify-center mr-2">
-                <span className="text-purple-400 text-xs">✓</span>
-              </div>
-              <span className="text-gray-400 font-medium text-xs">
-                EXPECTED
-              </span>
-            </div>
-            <code className="text-white font-mono text-xs break-all bg-black/30 px-2 py-1 rounded">
-              {testCase.expected_output}
-            </code>
-          </div>
-
-          <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
-            <div className="flex items-center mb-2">
-              <div className="w-6 h-6 bg-orange-500/20 rounded flex items-center justify-center mr-2">
-                <span className="text-orange-400 text-xs">→</span>
-              </div>
-              <span className="text-gray-400 font-medium text-xs">OUTPUT</span>
-            </div>
-            <code
-              className={`font-mono text-xs break-all px-2 py-1 rounded ${
-                testCase.passed
-                  ? "text-green-400 bg-green-500/10"
-                  : "text-red-400 bg-red-500/10"
-              }`}
+            <button
+              className="text-blue-300 hover:text-blue-200 transition-colors"
+              onClick={() => setShowHint(false)}
             >
-              {testCase.actual_output}
-            </code>
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+            <p className="text-blue-200 text-sm leading-relaxed">
+              {testResults.hint}
+            </p>
+          </div>
+          <div className="mt-3 flex justify-end">
+            <button
+              className="text-blue-300 hover:text-blue-200 text-sm flex items-center transition-colors"
+              onClick={() => setShowHint(false)}
+            >
+              Got it, thanks!
+            </button>
           </div>
         </div>
-      </div>
-    );
-  };
-
-  // Render efficiency analysis
-  const renderEfficiencyAnalysis = (efficiency) => {
-    if (!efficiency) return null;
-
-    return (
-      <div className="mt-6 p-5 bg-gradient-to-br from-blue-500/10 to-purple-500/5 rounded-xl border border-blue-500/20">
-        <h4 className="font-bold text-lg mb-4 flex items-center text-white">
-          <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center mr-3">
-            <Zap className="w-4 h-4 text-blue-400" />
-          </div>
-          Efficiency Analysis
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div className="bg-black/30 rounded-lg p-4 border border-gray-700/50">
-              <div className="text-sm text-gray-400 mb-2">
-                Your Time Complexity
-              </div>
-              <div className="text-white font-mono text-lg font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                {efficiency.time_complexity}
-              </div>
-            </div>
-            <div className="bg-black/30 rounded-lg p-4 border border-gray-700/50">
-              <div className="text-sm text-gray-400 mb-2">
-                Optimal Time Complexity
-              </div>
-              <div className="text-white font-mono text-lg font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
-                {efficiency.optimal_time_complexity}
-              </div>
-            </div>
-          </div>
-          <div className="space-y-4">
-            <div className="bg-black/30 rounded-lg p-4 border border-gray-700/50">
-              <div className="text-sm text-gray-400 mb-2">
-                Your Space Complexity
-              </div>
-              <div className="text-white font-mono text-lg font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-                {efficiency.space_complexity}
-              </div>
-            </div>
-            <div className="bg-black/30 rounded-lg p-4 border border-gray-700/50">
-              <div className="text-sm text-gray-400 mb-2">
-                Optimal Space Complexity
-              </div>
-              <div className="text-white font-mono text-lg font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
-                {efficiency.optimal_space_complexity}
-              </div>
-            </div>
-          </div>
-        </div>
-        {efficiency.comparison && (
-          <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-            <div className="flex items-center text-blue-300 text-sm">
-              <Lightbulb className="w-4 h-4 mr-2" />
-              {efficiency.comparison}
-            </div>
-          </div>
-        )}
       </div>
     );
   };
@@ -724,18 +664,6 @@ const CodingPracticePage = () => {
                   <ChevronLeft className="w-4 h-4" />
                 </button>
               </div>
-
-              {/* Search Bar */}
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search topics..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-gray-950 border  rounded-lg text-sm focus:outline-none focus:border-gray-900 text-white"
-                />
-              </div>
             </div>
           )}
 
@@ -767,96 +695,87 @@ const CodingPracticePage = () => {
                 </div>
               )}
 
-              {/* Selected Topics Display */}
-              {/* Data Structure Input */}
-              <div className="mb-4">
+              {/* Data Structure Input with Suggestions */}
+              <div className="relative" ref={topicInputRef}>
                 <label className="block text-sm font-medium mb-2 text-white">
                   Data Structure
                 </label>
                 <input
                   type="text"
                   value={dsTopic}
-                  onChange={(e) => setDsTopic(e.target.value)}
+                  onChange={(e) => {
+                    setDsTopic(e.target.value);
+                    setShowTopicSuggestions(true);
+                  }}
+                  onFocus={() => setShowTopicSuggestions(true)}
                   placeholder="e.g., Arrays, Linked Lists, Trees"
                   className="w-full p-3 bg-gray-950 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-orange-500 text-white"
                 />
+
+                {/* Topic Suggestions Dropdown */}
+                {showTopicSuggestions && filteredTopics.length > 0 && (
+                  <div
+                    ref={topicSuggestionsRef}
+                    className="absolute top-full left-0 right-0 mt-1 bg-gray-950 border border-gray-700 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto"
+                  >
+                    {filteredTopics.map((topic, index) => (
+                      <button
+                        key={index}
+                        className="w-full text-left px-4 py-3 hover:bg-gray-800 text-white text-sm border-b border-gray-700 last:border-b-0 transition-colors duration-150"
+                        onClick={() => handleTopicSelect(topic)}
+                      >
+                        {topic}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Subtopic Input */}
-              <div className="mb-4">
+              {/* Subtopic Input with Suggestions */}
+              <div className="relative" ref={subTopicInputRef}>
                 <label className="block text-sm font-medium mb-2 text-white">
                   Subtopic
                 </label>
                 <input
                   type="text"
                   value={dsSubTopic}
-                  onChange={(e) => setDsSubTopic(e.target.value)}
-                  placeholder="e.g., Introduction, Operations, Traversal"
-                  className="w-full p-3 bg-gray-950 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-orange-500 text-white"
-                />
-              </div>
-              {/* Topics Dropdown */}
-              <div>
-                <button
-                  className="w-full text-left p-3 rounded-lg flex items-center justify-between hover:bg-gray-800/50 transition-colors border border-gray-700 bg-gray-950"
-                  onClick={() => {
-                    setShowTopicsDropdown(!showTopicsDropdown);
-                    if (!showTopicsDropdown) setShowProblemsDropdown(false);
+                  onChange={(e) => {
+                    setDsSubTopic(e.target.value);
+                    setShowSubTopicSuggestions(true);
                   }}
-                >
-                  <span className="font-medium text-sm text-white">
-                    Select Data Structure & Topic
-                  </span>
-                  {showTopicsDropdown ? (
-                    <ChevronUp className="w-4 h-4 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
-                  )}
-                </button>
+                  onFocus={() => dsTopic && setShowSubTopicSuggestions(true)}
+                  placeholder={
+                    dsTopic
+                      ? "e.g., Introduction, Operations, Traversal"
+                      : "Select data structure first"
+                  }
+                  disabled={!dsTopic}
+                  className={`w-full p-3 bg-gray-950 border rounded-lg text-sm focus:outline-none text-white ${
+                    dsTopic
+                      ? "border-gray-700 focus:border-orange-500"
+                      : "border-gray-800 cursor-not-allowed opacity-50"
+                  }`}
+                />
 
-                {showTopicsDropdown && (
-                  <div className="mt-2 max-h-60 overflow-y-auto border border-gray-700 rounded-lg bg-gray-950">
-                    <div className="p-2">
-                      {filteredDataStructures.map((ds) => (
-                        <div key={ds.id} className="mb-2">
-                          <button
-                            className="w-full text-left p-2 rounded-lg flex items-center justify-between hover:bg-gray-800/50 transition-colors"
-                            onClick={() => toggleDropdown(ds.id)}
-                          >
-                            <span className="font-medium text-sm text-white">
-                              {ds.name}
-                            </span>
-                            {ds.open ? (
-                              <ChevronDown className="w-4 h-4 text-gray-400" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4 text-gray-400" />
-                            )}
-                          </button>
-                          {ds.open && (
-                            <div className="ml-3 pl-2 border-l border-gray-700 mt-1">
-                              {ds.subtopics.map((subtopic) => (
-                                <button
-                                  key={subtopic.id}
-                                  className={`w-full text-left p-2 rounded-lg transition-colors text-xs mb-1 ${
-                                    dsSubTopic === subtopic.name &&
-                                    dsTopic === ds.name
-                                      ? "bg-orange-500/20 text-orange-500 border border-orange-500/30"
-                                      : "hover:bg-gray-800/30 text-gray-300 border border-transparent"
-                                  }`}
-                                  onClick={() =>
-                                    handleTopicSelect(ds.name, subtopic.name)
-                                  }
-                                >
-                                  {subtopic.name}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                {/* Subtopic Suggestions Dropdown */}
+                {showSubTopicSuggestions &&
+                  filteredSubTopics.length > 0 &&
+                  dsTopic && (
+                    <div
+                      ref={subTopicSuggestionsRef}
+                      className="absolute top-full left-0 right-0 mt-1 bg-gray-950 border border-gray-700 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto"
+                    >
+                      {filteredSubTopics.map((subtopic, index) => (
+                        <button
+                          key={index}
+                          className="w-full text-left px-4 py-3 hover:bg-gray-950 text-white text-sm border-b border-gray-700 last:border-b-0 transition-colors duration-150"
+                          onClick={() => handleSubTopicSelect(subtopic)}
+                        >
+                          {subtopic}
+                        </button>
                       ))}
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
 
               {/* Generate Problems Button */}
@@ -885,66 +804,48 @@ const CodingPracticePage = () => {
                 )}
               </button>
 
-              {/* Problems Dropdown */}
+              {/* Problems List */}
               {problems.length > 0 && (
-                <div>
-                  <button
-                    className="w-full text-left p-3 rounded-lg flex items-center justify-between hover:bg-gray-800/50 transition-colors border border-gray-700 bg-gray-950"
-                    onClick={() => {
-                      setShowProblemsDropdown(!showProblemsDropdown);
-                      if (!showProblemsDropdown) setShowTopicsDropdown(false);
-                    }}
-                  >
-                    <span className="font-medium text-sm text-white">
-                      Generated Problems ({problems.length})
-                    </span>
-                    {showProblemsDropdown ? (
-                      <ChevronUp className="w-4 h-4 text-gray-400" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    )}
-                  </button>
-
-                  {showProblemsDropdown && (
-                    <div className="mt-2 border border-gray-700 rounded-lg bg-gray-950">
-                      <div className="p-2 space-y-2">
-                        {problems.map((problem) => (
-                          <div
-                            key={problem.id}
-                            className={`p-3 rounded-lg cursor-pointer transition-colors border ${
-                              selectedProblem?.id === problem.id
-                                ? "bg-gray-950 border-orange-500/30"
-                                : "hover:bg-gray-800/50 border-gray-800"
+                <div className="mt-6">
+                  <h3 className="font-bold text-lg mb-3 text-white">
+                    Generated Problems ({problems.length})
+                  </h3>
+                  <div className="space-y-2 max-h-96 ">
+                    {problems.map((problem) => (
+                      <div
+                        key={problem.id}
+                        className={`p-3 rounded-lg cursor-pointer transition-colors border ${
+                          selectedProblem?.id === problem.id
+                            ? "bg-gray-950 border-orange-500/30"
+                            : "hover:bg-gray-800/50 border-gray-800"
+                        }`}
+                        onClick={() => handleProblemSelect(problem)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-white">
+                            {problem.title}
+                          </span>
+                          {testResults?.passed &&
+                            selectedProblem?.id === problem.id && (
+                              <CheckCircle className="w-4 h-4 text-green-500" />
+                            )}
+                        </div>
+                        <div className="flex items-center mt-2">
+                          <span
+                            className={`text-xs px-2 py-1 rounded-full ${
+                              problem.difficulty === "easy"
+                                ? "bg-green-500/20 text-green-400"
+                                : problem.difficulty === "medium"
+                                ? "bg-yellow-500/20 text-yellow-400"
+                                : "bg-red-500/20 text-red-400"
                             }`}
-                            onClick={() => handleProblemSelect(problem)}
                           >
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-white">
-                                {problem.title}
-                              </span>
-                              {testResults?.passed &&
-                                selectedProblem?.id === problem.id && (
-                                  <CheckCircle className="w-4 h-4 text-green-500" />
-                                )}
-                            </div>
-                            <div className="flex items-center mt-2">
-                              <span
-                                className={`text-xs px-2 py-1 rounded-full ${
-                                  problem.difficulty === "easy"
-                                    ? "bg-green-500/20 text-green-400"
-                                    : problem.difficulty === "medium"
-                                    ? "bg-yellow-500/20 text-yellow-400"
-                                    : "bg-red-500/20 text-red-400"
-                                }`}
-                              >
-                                {problem.difficulty}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
+                            {problem.difficulty}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -1166,7 +1067,7 @@ const CodingPracticePage = () => {
                   />
                 </div>
 
-                {/* Resize Handle - Moved above buttons */}
+                {/* Resize Handle */}
                 <div
                   className="relative group cursor-row-resize bg-gray-800 hover:bg-gray-700 transition-colors flex items-center justify-center"
                   style={{ height: "8px" }}
@@ -1249,8 +1150,11 @@ const CodingPracticePage = () => {
               >
                 {testResults ? (
                   <div className="p-4">
+                    {/* Hint Section - Only shows when user clicks "Show Hint" */}
+                    {renderHint()}
+
                     {testResults.passed ? (
-                      <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-2 border-green-500/30 p-4 rounded-xl mb-6">
+                      <div className="bg-black border-2 border-green-500/30 p-4 rounded-xl mb-6">
                         <div className="flex items-center text-green-300">
                           <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center mr-3">
                             <CheckCircle className="w-6 h-6" />
@@ -1289,6 +1193,18 @@ const CodingPracticePage = () => {
                             </span>
                           </div>
                         </div>
+
+                        {/* Show hint button - Only appears if hint exists and not already shown */}
+                        {testResults.hint && !showHint && (
+                          <button
+                            className="mt-3 bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-4 rounded-lg flex items-center transition-colors"
+                            onClick={() => setShowHint(true)}
+                          >
+                            <HelpCircle className="w-4 h-4 mr-2" />
+                            Show Hint
+                          </button>
+                        )}
+
                         {testResults.errors?.map((error, idx) => (
                           <div
                             key={idx}
@@ -1310,16 +1226,18 @@ const CodingPracticePage = () => {
                             <FileText className="w-5 h-5 mr-2 text-blue-400" />
                             Test Cases
                           </h4>
-                          <div className="text-sm text-gray-400">
-                            {
-                              testResults.test_cases.filter((tc) => tc.passed)
-                                .length
-                            }
-                            /{testResults.test_cases.length} passed
+                          <div className="flex items-center">
+                            <div className="text-sm text-gray-400">
+                              {
+                                testResults.test_cases.filter((tc) => tc.passed)
+                                  .length
+                              }
+                              /{testResults.test_cases.length} passed
+                            </div>
                           </div>
                         </div>
 
-                        {/* Test Cases List - LeetCode Style */}
+                        {/* Test Cases List */}
                         <div className="space-y-3">
                           {testResults.test_cases.map((testCase, idx) => (
                             <div
@@ -1327,7 +1245,7 @@ const CodingPracticePage = () => {
                               className={`border rounded-lg p-4 transition-all duration-200 ${
                                 testCase.passed
                                   ? "border-green-500/30 bg-black"
-                                  : "border-red-500/30 bg-red-500/5"
+                                  : "border-red-500/30 bg-black"
                               }`}
                             >
                               <div className="flex items-center justify-between mb-3">
@@ -1345,7 +1263,7 @@ const CodingPracticePage = () => {
                                   className={`px-3 py-1 rounded-full text-xs font-medium ${
                                     testCase.passed
                                       ? "bg-black text-green-400"
-                                      : "bg-red-500/20 text-red-400"
+                                      : "bg-black text-red-400"
                                   }`}
                                 >
                                   {testCase.passed ? "Passed" : "Failed"}
@@ -1385,7 +1303,7 @@ const CodingPracticePage = () => {
                                         : "bg-red-500/10 text-red-400 border border-red-500/20"
                                     }`}
                                   >
-                                    {testCase.user_output}
+                                    {testCase.actual_output}
                                   </div>
                                 </div>
                               </div>

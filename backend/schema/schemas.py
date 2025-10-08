@@ -70,6 +70,7 @@ class TestResult(BaseModel):
      test_cases:List[Dict]
      errors:List[Dict]=[]
      efficiency:Optional[Dict]=None
+     hint: Optional[str] = None
 #-------------------Test Case Result----------------------------#
 
 
