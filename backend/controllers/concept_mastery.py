@@ -1,14 +1,11 @@
-from schema.schemas import ExplainationRequest,ExplainationResponse,SolutionRequest
+from schema.schemas import ExplainationRequest,ExplainationResponse,SolutionRequest,ProblemRequest
 from controllers.auth import get_current_user
 from fastapi import Depends,HTTPException
 from sqlalchemy import text
 from agents.teacher_agent import teacher_agent
 import uuid,json,logging
 from config import engine
-from schema.schemas import ProblemRequest
-from agents.examiner_agent import examiner_agent
-from agents.examiner_agent import problems_db
-from agents.checker_agent import checker_agent
+
 def generate_explaination(request:ExplainationRequest,current_user):
     """
     Generate an explanation for a DSA concept and store it in the DB, 

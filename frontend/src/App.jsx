@@ -8,6 +8,7 @@ import { Toaster } from "sonner";
 import TopicUnderstanding from "./components/TopicUnderstanding";
 import Profile from "./components/Profile";
 import CodingPracticePage from "./components/CodingPracticePage";
+import QuizPage from "./components/QuizPage";
 
 const appRouter = createBrowserRouter([
   {
@@ -33,6 +34,10 @@ const appRouter = createBrowserRouter([
   {
     path: "/practice",
     element: <CodingPracticePage />,
+  },
+  {
+    path: "/quizzes",
+    element: <QuizPage />,
   },
 ]);
 

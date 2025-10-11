@@ -1,7 +1,7 @@
 from typing import Optional,List,Dict
 from pydantic import BaseModel
 import uuid
-
+from typing import Union,Any
 #-------------------SignUp----------------------------#
 class SignupRequest(BaseModel):
       name:str
@@ -72,6 +72,58 @@ class TestResult(BaseModel):
      efficiency:Optional[Dict]=None
      hint: Optional[str] = None
 #-------------------Test Case Result----------------------------#
+#-------------------Difficulty Level----------------------------#
+class DifficultyLevel(str):
+     EASY="easy"
+     MEDIUM="medium"
+     HARD="hard"
+#-------------------Difficulty Level----------------------------#
+#-------------------Programming Language----------------------------#
+class ProgrammingLanguage(str):
+     PYTHON="python"
+     JAVA="java"
+     JAVASCRIPT="javascript"
+     CPP="cpp"
+     C="c"
+#-------------------Programming Language----------------------------#
+#-------------------Quiz Request----------------------------#
+class QuizRequest(BaseModel):
+     topic:str
+     subtopic:str
+     difficulty:str
+     language:str
+     num_questions:int=5
+#-------------------Quiz Request----------------------------#
+#-------------------Question----------------------------#
+class Question(BaseModel):
+     id:int
+     type:str
+     question:str
+     options:Optional[List[str]]=None
+     correct_answer:Union[int, str]
+     explanation:str
+#-------------------Question----------------------------#
+#-------------------Quiz Response----------------------------#
+class QuizResponse(BaseModel):
+     quiz_id:str
+     title:str
+     description:str
+     questions:List[Question]
+     time_limit:int
+#-------------------Quiz Response----------------------------#
+#-------------------Evaluation Request----------------------------#
+class EvaluationRequest(BaseModel):
+     answers:Dict[int,Any]
+#-------------------Evaluation Request----------------------------#
+#-------------------Evaluation Result----------------------------#
+class EvaluationResult(BaseModel):
+     score:float
+     correct_answers:int
+     total_questions:int
+     feedback:Dict[int,str]
+     recommendation:str=""
+#-------------------Evaluation Result----------------------------#
+
 
 
 

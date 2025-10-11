@@ -1,12 +1,13 @@
 from fastapi import FastAPI,HTTPException,Depends
 from sqlalchemy import  text
 from fastapi.middleware.cors import CORSMiddleware
-from schema.schemas import SignupRequest,LoginRequest,ExplainationResponse,ExplainationRequest,ProblemRequest,SolutionRequest
+from schema.schemas import SignupRequest,LoginRequest,ExplainationResponse,ExplainationRequest,ProblemRequest,SolutionRequest,QuizResponse,QuizRequest,EvaluationResult,EvaluationRequest
 from dotenv import load_dotenv
 from controllers.auth import signup,login,get_current_user
 from controllers.profile_details import get_profile,get_my_concepts
-from controllers.generative import generate_explaination,generate_problems,evaluate_solution
+from controllers.concept_mastery import generate_explaination,generate_problems,evaluate_solution
 from agents.testing_agent import test_agent
+from controllers.quiz_challenge import generate_quizes,evaluate_quiz
 from config import engine,SessionLocal
 load_dotenv()
 
@@ -71,3 +72,11 @@ def evaluate_the_solution(request:SolutionRequest,user=Depends(get_current_user)
 @app.post("/api/run-tests")
 def run_tests_on_problem(request:SolutionRequest,user=Depends(get_current_user)):
     return test_agent(request,user)
+
+@app.post("/api/generate-quizzes",response_model=QuizResponse)
+def generates_quizzes(request: QuizRequest,user=Depends(get_current_user)):
+    return generate_quizes(request,user)
+
+@app.post("/api/evaluate-quiz/{quiz_id}",response_model=EvaluationResult)
+def evaluates_quiz(quiz_id:str,request:EvaluationRequest,user=Depends(get_current_user)):
+    return evaluate_quiz(quiz_id,request,user)
