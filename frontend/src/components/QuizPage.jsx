@@ -88,8 +88,6 @@ const QuizPage = () => {
   const [streamingFeedback, setStreamingFeedback] = useState({});
   const [currentStreamingQuestion, setCurrentStreamingQuestion] =
     useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingProgress, setProcessingProgress] = useState(0);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showFullScreenWarning, setShowFullScreenWarning] = useState(false);
 
@@ -358,23 +356,6 @@ const QuizPage = () => {
     }
   }, [quizStarted, quizCompleted]);
 
-  // Simulate processing with progress
-  const simulateProcessing = () => {
-    setIsProcessing(true);
-    setProcessingProgress(0);
-
-    const interval = setInterval(() => {
-      setProcessingProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsProcessing(false);
-          return 100;
-        }
-        return prev + Math.random() * 20;
-      });
-    }, 100);
-  };
-
   // Particle animation for celebrations
   useEffect(() => {
     if (quizCompleted && evaluationResult?.score >= 70) {
@@ -561,6 +542,8 @@ const QuizPage = () => {
       }
     } catch (err) {
       setError(err.message);
+    } finally {
+      setIsEvaluating(false);
     }
   };
 
@@ -644,9 +627,7 @@ const QuizPage = () => {
     } catch (err) {
       setError(err.message);
       console.error("Error evaluating quiz:", err);
-    } finally {
       setIsEvaluating(false);
-      setCurrentStreamingQuestion(null);
     }
   };
 
@@ -727,13 +708,8 @@ const QuizPage = () => {
     // Exit full screen when quiz completes
     await exitFullScreen();
 
-    // Show processing state before starting evaluation
-    simulateProcessing();
-
-    // Wait for processing to complete before starting evaluation
-    setTimeout(async () => {
-      await evaluateQuiz();
-    }, 2500);
+    // Start evaluation immediately
+    await evaluateQuiz();
   };
 
   // Restart quiz
@@ -750,8 +726,7 @@ const QuizPage = () => {
     setCurrentStreamingQuestion(null);
     setTimeLeft(quiz.time_limit * 60);
     setParticles([]);
-    setIsProcessing(false);
-    setProcessingProgress(0);
+    setIsEvaluating(false);
 
     // Re-enter full screen
     await enterFullScreen();
@@ -882,15 +857,15 @@ const QuizPage = () => {
     </div>
   );
 
-  // Processing Component with Fixed Loader
+  // Processing Component with Smooth Spinner
   const ProcessingDisplay = () => (
     <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-gray-900 via-black to-purple-900">
       <div className="text-center max-w-2xl w-full">
-        {/* Fixed Animated Processing Icon */}
+        {/* Smooth Circular Spinner */}
         <div className="relative mb-8">
           <div className="w-32 h-32 mx-auto relative">
             {/* Outer Glow */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-pulse opacity-20 blur-xl"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full opacity-20 blur-xl"></div>
 
             {/* Main Processing Circle */}
             <div className="absolute inset-4 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-full flex items-center justify-center shadow-2xl">
@@ -899,84 +874,56 @@ const QuizPage = () => {
               </div>
             </div>
 
-            {/* Fixed Smooth Rotating Progress Ring */}
-            <div
-              className="absolute inset-0 border-4 border-transparent border-t-blue-400 border-r-purple-400 rounded-full animate-spin"
-              style={{ animationDuration: "1.5s" }}
-            ></div>
-
-            {/* Additional rotating ring for better effect */}
-            <div
-              className="absolute inset-2 border-2 border-transparent border-b-cyan-400 border-l-pink-400 rounded-full animate-spin"
-              style={{ animationDuration: "2s", animationDirection: "reverse" }}
-            ></div>
+            {/* Smooth Rotating Progress Ring */}
+            <div className="absolute inset-0">
+              <div className="w-full h-full rounded-full border-4 border-transparent border-t-blue-400 border-r-purple-400 animate-spin"></div>
+            </div>
           </div>
         </div>
 
         <h3 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-4">
-          Processing Your Results
+          Analyzing Your Answers
         </h3>
         <p className="text-lg text-gray-300 mb-8 max-w-md mx-auto leading-relaxed">
-          Our AI is carefully analyzing your answers and generating personalized
-          feedback...
+          Our AI is carefully examining your responses and generating
+          personalized feedback...
         </p>
 
-        {/* Progress Bar */}
-        <div className="max-w-md mx-auto mb-8">
-          <div className="flex justify-between text-sm text-gray-400 mb-3">
-            <span>Processing</span>
-            <span>{Math.round(processingProgress)}%</span>
-          </div>
-          <div className="w-full bg-gray-800 rounded-full h-3">
-            <div
-              className="bg-gradient-to-r from-cyan-500 to-purple-500 h-3 rounded-full transition-all duration-300 ease-out shadow-lg shadow-cyan-500/25"
-              style={{
-                width: `${processingProgress}%`,
-              }}
-            ></div>
-          </div>
-        </div>
-
-        {/* Loading Steps */}
-        <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
-          {[
-            { text: "Analyzing Answers", active: processingProgress > 0 },
-            { text: "Generating Feedback", active: processingProgress > 33 },
-            { text: "Finalizing Results", active: processingProgress > 66 },
-          ].map((step, index) => (
-            <div key={index} className="text-center">
-              <div
-                className={`w-3 h-3 rounded-full mx-auto mb-2 transition-all duration-300 ${
-                  step.active
-                    ? "bg-green-400 shadow-lg shadow-green-400/25"
-                    : "bg-gray-600"
-                }`}
-              ></div>
-              <div
-                className={`text-xs transition-all duration-300 ${
-                  step.active ? "text-green-400" : "text-gray-500"
-                }`}
-              >
-                {step.text}
-              </div>
+        {/* Progress Stats */}
+        <div className="grid grid-cols-3 gap-4 max-w-md mx-auto mb-8">
+          <div className="text-center p-4 bg-gray-800/30 rounded-xl">
+            <div className="text-2xl font-bold text-cyan-400">
+              {Object.keys(streamingFeedback).length}
             </div>
-          ))}
+            <div className="text-xs text-gray-400">Questions Analyzed</div>
+          </div>
+          <div className="text-center p-4 bg-gray-800/30 rounded-xl">
+            <div className="text-2xl font-bold text-purple-400">
+              {quiz
+                ? quiz.questions.length - Object.keys(streamingFeedback).length
+                : 0}
+            </div>
+            <div className="text-xs text-gray-400">Remaining</div>
+          </div>
+          <div className="text-center p-4 bg-gray-800/30 rounded-xl">
+            <div className="text-2xl font-bold text-green-400">
+              {quiz
+                ? Math.round(
+                    (Object.keys(streamingFeedback).length /
+                      quiz.questions.length) *
+                      100
+                  )
+                : 0}
+              %
+            </div>
+            <div className="text-xs text-gray-400">Complete</div>
+          </div>
         </div>
 
         {/* Fun Message */}
         <div className="mt-8">
           <div className="inline-flex items-center space-x-2 px-4 py-2 bg-black/50 rounded-full border border-cyan-500/30">
-            <Sparkles className="w-4 h-4 text-cyan-400" />
-            <span className="text-sm text-cyan-300">
-              {processingProgress < 30 && "Starting analysis..."}
-              {processingProgress >= 30 &&
-                processingProgress < 60 &&
-                "Evaluating your responses..."}
-              {processingProgress >= 60 &&
-                processingProgress < 90 &&
-                "Generating insights..."}
-              {processingProgress >= 90 && "Almost ready..."}
-            </span>
+          
           </div>
         </div>
       </div>
@@ -989,174 +936,9 @@ const QuizPage = () => {
 
   // Beautiful Results Component
   const ResultsDisplay = () => {
-    if (isProcessing) {
-      return <ProcessingDisplay />;
-    }
-
+    // Show processing only while waiting for LLM response
     if (isEvaluating) {
-      return (
-        <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-gray-900 via-black to-purple-900">
-          <div className="text-center max-w-4xl w-full">
-            {/* Evaluating animation */}
-            <div className="relative mb-12">
-              <div className="w-48 h-48 mx-auto relative">
-                {/* Outer Glow */}
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-pulse opacity-20 blur-xl"></div>
-
-                {/* Neural Network Connections */}
-                <div className="absolute inset-0">
-                  {[...Array(8)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute w-1 h-1 bg-blue-400 rounded-full animate-ping"
-                      style={{
-                        top: `${25 + 15 * Math.sin(i * 0.785)}%`,
-                        left: `${25 + 15 * Math.cos(i * 0.785)}%`,
-                        animationDelay: `${i * 0.2}s`,
-                      }}
-                    />
-                  ))}
-                </div>
-
-                {/* Brain Container */}
-                <div className="absolute inset-4 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-full flex items-center justify-center shadow-2xl">
-                  <div className="relative">
-                    <Brain className="w-20 h-20 text-white animate-pulse" />
-
-                    {/* Floating Particles */}
-                    {[...Array(12)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="absolute w-2 h-2 bg-cyan-400 rounded-full animate-bounce"
-                        style={{
-                          top: `${-10 + 20 * Math.sin(i * 0.523)}px`,
-                          left: `${-10 + 20 * Math.cos(i * 0.523)}px`,
-                          animationDelay: `${i * 0.3}s`,
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Rotating Orbit */}
-                <div className="absolute inset-0 border-2 border-blue-400/30 rounded-full animate-spin">
-                  <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-cyan-400 rounded-full shadow-lg"></div>
-                </div>
-              </div>
-
-              {/* Progress Rings */}
-              <div className="absolute -inset-8">
-                <div
-                  className="absolute inset-0 border-2 border-green-400/20 rounded-full animate-spin"
-                  style={{ animationDuration: "8s" }}
-                ></div>
-                <div
-                  className="absolute inset-4 border-2 border-purple-400/20 rounded-full animate-spin"
-                  style={{
-                    animationDuration: "6s",
-                    animationDirection: "reverse",
-                  }}
-                ></div>
-              </div>
-            </div>
-
-            <h3 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-6">
-              Analyzing Your Masterpiece
-            </h3>
-            <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">
-              Our AI is carefully examining each response, uncovering patterns
-              and insights...
-            </p>
-
-            {/* Elegant Progress Visualization */}
-            <div className="max-w-2xl mx-auto">
-              {/* Progress Bar */}
-              <div className="mb-8">
-                <div className="flex justify-between text-sm text-gray-400 mb-3">
-                  <span>Processing Questions</span>
-                  <span>
-                    {Math.round(
-                      (Object.keys(streamingFeedback).length /
-                        quiz.questions.length) *
-                        100
-                    )}
-                    %
-                  </span>
-                </div>
-                <div className="w-full bg-gray-800 rounded-full h-3">
-                  <div
-                    className="bg-gradient-to-r from-cyan-500 to-purple-500 h-3 rounded-full transition-all duration-1000 ease-out shadow-lg shadow-cyan-500/25"
-                    style={{
-                      width: `${
-                        (Object.keys(streamingFeedback).length /
-                          quiz.questions.length) *
-                        100
-                      }%`,
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              {/* AI Insights Counter */}
-              <div className="mt-8 p-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl border border-blue-500/20">
-                <div className="flex items-center justify-center space-x-6">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-cyan-400">
-                      {Object.keys(streamingFeedback).length}
-                    </div>
-                    <div className="text-sm text-gray-400">
-                      Questions Analyzed
-                    </div>
-                  </div>
-                  <div className="w-px h-12 bg-gray-700"></div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-purple-400">
-                      {quiz.questions.length -
-                        Object.keys(streamingFeedback).length}
-                    </div>
-                    <div className="text-sm text-gray-400">Remaining</div>
-                  </div>
-                  <div className="w-px h-12 bg-gray-700"></div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-green-400">
-                      {Math.round(
-                        (Object.keys(streamingFeedback).length /
-                          quiz.questions.length) *
-                          100
-                      )}
-                      %
-                    </div>
-                    <div className="text-sm text-gray-400">Complete</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Fun AI Messages */}
-              <div className="mt-6 text-center">
-                <div className="inline-flex items-center space-x-2 px-4 py-2 bg-black/50 rounded-full border border-cyan-500/30">
-                  <Sparkles className="w-4 h-4 text-cyan-400" />
-                  <span className="text-sm text-cyan-300">
-                    {Object.keys(streamingFeedback).length === 0 &&
-                      "Initializing neural networks..."}
-                    {Object.keys(streamingFeedback).length > 0 &&
-                      Object.keys(streamingFeedback).length <
-                        quiz.questions.length / 2 &&
-                      "Discovering patterns in your answers..."}
-                    {Object.keys(streamingFeedback).length >=
-                      quiz.questions.length / 2 &&
-                      Object.keys(streamingFeedback).length <
-                        quiz.questions.length &&
-                      "Generating personalized insights..."}
-                    {Object.keys(streamingFeedback).length ===
-                      quiz.questions.length &&
-                      "Finalizing your performance analysis..."}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
+      return <ProcessingDisplay />;
     }
 
     return (
@@ -1415,23 +1197,19 @@ const QuizPage = () => {
               setUserAnswers({});
               setEvaluationResult(null);
               setStreamingFeedback({});
-              setIsProcessing(false);
-              setProcessingProgress(0);
+              setIsEvaluating(false);
             }}
             className="flex items-center justify-center px-8 py-4 border-2 border-gray-700/50 text-gray-400 hover:text-white hover:border-gray-600/50 rounded-2xl transition-all duration-300 transform hover:scale-105 font-semibold"
           >
             New Quiz
           </button>
-          <button className="flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25 font-semibold">
-            <Share2 className="w-5 h-5 mr-2" />
-            Share Results
-          </button>
+        
         </div>
       </div>
     );
   };
 
-  // Modified MCQ Options Component
+
   const MCQOptions = ({
     question,
     onAnswerSelect,
@@ -1767,38 +1545,7 @@ const QuizPage = () => {
                 </button>
 
                 {/* Generated Quiz Info */}
-                {quiz && !quizStarted && !quizCompleted && (
-                  <div className="mt-6 p-4 bg-gray-900 rounded-lg border border-gray-700">
-                    <h3 className="font-bold text-lg mb-3 text-white">
-                      Quiz Ready! 🎉
-                    </h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Title:</span>
-                        <span className="text-white">{quiz.title}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Questions:</span>
-                        <span className="text-white">
-                          {quiz.questions.length}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Time:</span>
-                        <span className="text-orange-400">
-                          {quiz.time_limit} min
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={startQuiz}
-                      className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
-                    >
-                      <Play className="w-4 h-4 mr-2" />
-                      <span>Start Quiz</span>
-                    </button>
-                  </div>
-                )}
+                
               </div>
             </div>
           </div>
@@ -2122,8 +1869,7 @@ const QuizPage = () => {
                         setQuiz(null);
                         setQuizStarted(false);
                         setQuizCompleted(false);
-                        setIsProcessing(false);
-                        setProcessingProgress(0);
+                        setIsEvaluating(false);
                       }}
                       className="px-8 py-4 border-2 border-gray-700/50 text-gray-400 hover:text-white hover:border-gray-600/50 rounded-2xl transition-all duration-300 transform hover:scale-105 font-semibold"
                     >
