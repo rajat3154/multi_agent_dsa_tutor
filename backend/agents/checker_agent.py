@@ -39,7 +39,7 @@ def checker_agent(problem:Problem,user_code:str,language:str)->dict:
       {{
       "input":"test_input",
       "expected_output":"expected_output",
-      "user_output":"actual_output",
+      "actual_output":"actual_output",
       "passed":true/false,
       }}],
       "errors":[
