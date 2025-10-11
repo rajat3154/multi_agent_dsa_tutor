@@ -859,8 +859,8 @@ const QuizPage = () => {
 
   // Processing Component with Smooth Spinner
   const ProcessingDisplay = () => (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-gray-900 via-black to-purple-900">
-      <div className="text-center max-w-2xl w-full">
+    <div className="min-h-screen flex justify-center p-6 bg-black">
+      <div className="text-center max-w-2xl mt-10 w-full">
         {/* Smooth Circular Spinner */}
         <div className="relative mb-8">
           <div className="w-32 h-32 mx-auto relative">
